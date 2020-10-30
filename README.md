@@ -50,9 +50,9 @@ SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxi
 * each default box has location: ((i+0.5)/|fk|, (j+0.5)/|fk|) with |fk| the size of the k-th square feature map (i and k are in [0, |fk|)
 * Hard negative mining: after matching step most of the boxes are negatives, this leads to significant imbalance between positive and negative training examples. Instead of using all negative examples, they are sorted using the highest confidence loss for each default box and pick the top ones so that the ratio neg/pos is at most 3:1 (produce faster optimization and more stable training)
 * Data augmentation: each image is randomly sampled by one of the following options:
-		* use initial image
-		* sample a patch so that the minimum jaccard overlap with objects is 0.1, 0.3, 0.5, 0.7 or 0.9
-		* Randomly sample a patch
-	* The size of sampled patch is in [0.1, 1] of the original image size, aspect ratio is between 1/2 and 2. The patch is kept if the center of the ground truth is in it
-	* Each sampled patch is resized to fixed size and horizontally flipped with probability=0.5
-	* Other photo-metric distortions is applied
+	* use initial image
+	* sample a patch so that the minimum jaccard overlap with objects is 0.1, 0.3, 0.5, 0.7 or 0.9
+	* Randomly sample a patch
+* The size of sampled patch is in [0.1, 1] of the original image size, aspect ratio is between 1/2 and 2. The patch is kept if the center of the ground truth is in it
+* Each sampled patch is resized to fixed size and horizontally flipped with probability=0.5
+* Other photo-metric distortions is applied
