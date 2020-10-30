@@ -42,4 +42,4 @@ SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxi
 * The loss is the weighted sum of localization loss and confidence loss:
 <img src="https://latex.codecogs.com/svg.latex?\Large&space;L{global}=\frac{1}{N}\times(L{conf}+a\timesL{loc}" title="\Large L{global}=\frac{1}{N}\times(L{conf}+a\timesL{loc}" />
 
-<img src="https://latex.codecogs.com/svg.latex?\Large&space;L{global}=\frac{1}{N}" title="\Large L{global}=\frac{1}{N}" />
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;L{global}=\frac{1}{N} \times L{conf}" title="\Large L{global}=\frac{1}{N} \times L{conf}" />
