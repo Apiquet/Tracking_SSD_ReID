@@ -33,3 +33,11 @@ SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxi
 
 ## Training
 
+* groudn truth information needs to be assigned to specific outputs in the fixed set of detector outputs
+* Once the assignment is determined, the loss function and back propagation are applied end-to-end
+* Also need to choose the set of default boxes and scales for detection
+* hard negative mining
+* Data augmentation
+* Matching strategy: must determine which default boxes correspond to the ground truth one. This selection starts with the best jaccard overlap, then all boxes with a jaccard overlap > 0.5. This simplifies the learning problem, allowing the network to predict high scores for multiple overlapping default boxes rather than requiring to pick only the one with maximum overlap.
+* The loss is the weighted sum of localization loss and confidence loss:
+![\Large L{global}=\frac{1}{N} \times (L{conf} + a\timesL{loc}](https://latex.codecogs.com/svg.latex?\Large&space;L{global}=\frac{1}{N} \times (L{conf} + a\timesL{loc})
