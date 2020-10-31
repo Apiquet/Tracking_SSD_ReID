@@ -77,7 +77,7 @@ class VGG16():
         self.flatten_6_1 = Flatten()
         self.dense_6_2_4096 = Dense(4096, activation='relu')
         self.dense_6_3_4096 = Dense(4096, activation='relu')
-        self.dense_6_4_2 = Dense(2, activation='softmax')
+        self.dense_6_4_10 = Dense(10, activation='softmax')
 
     def model(self):
         '''
@@ -112,7 +112,7 @@ class VGG16():
         self.model.add(self.flatten_6_1)
         self.model.add(self.dense_6_2_4096)
         self.model.add(self.dense_6_3_4096)
-        self.model.add(self.dense_6_4_2)
+        self.model.add(self.dense_6_4_10)
 
         return self.model
 
