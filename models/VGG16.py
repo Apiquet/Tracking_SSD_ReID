@@ -83,36 +83,35 @@ class VGG16():
         '''
             Model Implementation
         '''
-        self.model = keras.models.Sequential()
-
-        # Stage 1
-        self.model.add(self.conv_1_1_64)
-        self.model.add(self.conv_1_2_64)
-        self.model.add(self.maxpool_1_3_2x2)
-        # Stage 2
-        self.model.add(self.conv_2_1_128)
-        self.model.add(self.conv_2_2_128)
-        self.model.add(self.maxpool_2_3_2x2)
-        # Stage 3
-        self.model.add(self.conv_3_1_256)
-        self.model.add(self.conv_3_2_256)
-        self.model.add(self.conv_3_3_256)
-        self.model.add(self.maxpool_3_4_2x2)
-        # Stage 4
-        self.model.add(self.conv_4_1_512)
-        self.model.add(self.conv_4_2_512)
-        self.model.add(self.conv_4_3_512)
-        self.model.add(self.maxpool_4_4_2x2)
-        # Stage 5
-        self.model.add(self.conv_5_1_512)
-        self.model.add(self.conv_5_2_512)
-        self.model.add(self.conv_5_3_512)
-        self.model.add(self.maxpool_5_4_2x2)
-        # Stage 5
-        self.model.add(self.flatten_6_1)
-        self.model.add(self.dense_6_2_4096)
-        self.model.add(self.dense_6_3_4096)
-        self.model.add(self.dense_6_4_10)
+        self.model = keras.models.Sequential([
+            self.conv_1_1_64,
+            self.conv_1_2_64,
+            self.maxpool_1_3_2x2,
+            # Stage 2
+            self.conv_2_1_128,
+            self.conv_2_2_128,
+            self.maxpool_2_3_2x2,
+            # Stage 3
+            self.conv_3_1_256,
+            self.conv_3_2_256,
+            self.conv_3_3_256,
+            self.maxpool_3_4_2x2,
+            # Stage 4
+            self.conv_4_1_512,
+            self.conv_4_2_512,
+            self.conv_4_3_512,
+            self.maxpool_4_4_2x2,
+            # Stage 5
+            self.conv_5_1_512,
+            self.conv_5_2_512,
+            self.conv_5_3_512,
+            self.maxpool_5_4_2x2,
+            # Stage 5
+            self.flatten_6_1,
+            self.dense_6_2_4096,
+            self.dense_6_3_4096,
+            self.dense_6_4_10
+        ])
 
         return self.model
 
