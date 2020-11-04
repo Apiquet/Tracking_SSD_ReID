@@ -13,24 +13,24 @@ class SSD224():
             Typo: layerType_Stage_NumberInStage_Info
         '''
         self.backbone = VGG16()
-        self.backbone_model = self.backbone.model()
+        self.backbone_model = self.backbone.getModel()
 
         self.flatten_1_1 = Flatten()
         self.dense_1_2_100 = Dense(100, activation='relu')
         self.dense_1_3_10 = Dense(10, activation='softmax')
 
-    def model(self):
         '''
             Model Implementation
         '''
-
-        model = keras.models.Sequential(
+        self.model = keras.models.Sequential(
             self.backbone_model.layers[:self.backbone.getIdxFlattenLayer()])
 
-        model.add(self.flatten_1_1)
-        model.add(self.dense_1_2_100)
-        model.add(self.dense_1_3_10)
-        return model
+        self.model.add(self.flatten_1_1)
+        self.model.add(self.dense_1_2_100)
+        self.model.add(self.dense_1_3_10)
+
+    def getModel(self):
+        return self.model
 
     def call(self, x):
         return self.model(x)
