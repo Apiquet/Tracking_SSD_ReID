@@ -3,16 +3,16 @@ from tensorflow import keras
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
 
 
-class SSD224():
+class SSD300():
 
     def __init__(self):
-        super(SSD224, self).__init__()
+        super(SSD300, self).__init__()
 
         '''
             Available layers
             Typo: layerType_Stage_NumberInStage_Info
         '''
-        self.backbone = VGG16()
+        self.backbone = VGG16(input_shape=(300, 300, 3))
         self.backbone_model = self.backbone.getModel()
 
         self.flatten_1_1 = Flatten()

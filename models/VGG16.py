@@ -4,14 +4,14 @@ from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
 
 class VGG16():
 
-    def __init__(self):
+    def __init__(self, input_shape=(224, 224, 3)):
         super(VGG16, self).__init__()
 
         '''
             Available layers
             Typo: layerType_Stage_NumberInStage_Info
         '''
-        self.conv_1_1_64 = Conv2D(input_shape=(224, 224, 3),
+        self.conv_1_1_64 = Conv2D(input_shape=input_shape,
                                   filters=64,
                                   kernel_size=(3, 3),
                                   padding="same",
