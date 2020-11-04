@@ -16,13 +16,13 @@ class SSD300():
 
         self.model = keras.models.Sequential(
             self.backbone_model.layers[:self.backbone.getIdxLastMAxPoolLayer()])
-        # fc6 to Conv
+        # fc6 to dilated conv
         self.model.add(Conv2D(filters=1024,
                               kernel_size=(3, 3),
                               padding="same",
                               activation="relu",
                               dilation_rate=6))
-        # fc7 to dilated conv
+        # fc7
         self.model.add(Conv2D(filters=1024,
                               kernel_size=(1, 1),
                               padding="same",
