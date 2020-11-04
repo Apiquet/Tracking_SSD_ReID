@@ -73,9 +73,9 @@ class VGG16():
                                    padding="same",
                                    activation="relu")
         self.maxpool_5_4_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
+        self.idx_maxpool_5_4_2x2 = 17
 
         self.flatten_6_1 = Flatten()
-        self.idx_flatten = 18
         self.dense_6_2_4096 = Dense(4096, activation='relu')
         self.dense_6_3_4096 = Dense(4096, activation='relu')
         self.dense_6_4_10 = Dense(10, activation='softmax')
@@ -113,8 +113,8 @@ class VGG16():
             self.dense_6_4_10
         ])
 
-    def getIdxFlattenLayer(self):
-        return self.idx_flatten
+    def getIdxLastMAxPoolLayer(self):
+        return self.idx_maxpool_5_4_2x2
 
     def getModel(self):
         return self.model
