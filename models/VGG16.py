@@ -80,10 +80,6 @@ class VGG16():
         self.dense_6_3_4096 = Dense(4096, activation='relu')
         self.dense_6_4_10 = Dense(10, activation='softmax')
 
-    def getIdxFlattenLayer(self):
-        return self.idx_flatten
-
-    def model(self):
         '''
             Model Implementation
         '''
@@ -117,6 +113,10 @@ class VGG16():
             self.dense_6_4_10
         ])
 
+    def getIdxFlattenLayer(self):
+        return self.idx_flatten
+
+    def getModel(self):
         return self.model
 
     def call(self, x):
