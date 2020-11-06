@@ -15,63 +15,76 @@ class VGG16():
                                   filters=64,
                                   kernel_size=(3, 3),
                                   padding="same",
-                                  activation="relu")
+                                  activation="relu",
+                                  name="Conv1_1")
         self.conv_1_2_64 = Conv2D(filters=64,
                                   kernel_size=(3, 3),
                                   padding="same",
-                                  activation="relu")
+                                  activation="relu",
+                                  name="Conv1_2")
         self.maxpool_1_3_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
 
         self.conv_2_1_128 = Conv2D(filters=128,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                  name="Conv2_1")
         self.conv_2_2_128 = Conv2D(filters=128,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                  name="Conv2_2")
         self.maxpool_2_3_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
 
         self.conv_3_1_256 = Conv2D(filters=256,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv3_1")
         self.conv_3_2_256 = Conv2D(filters=256,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv3_2")
         self.conv_3_3_256 = Conv2D(filters=256,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv3_3")
         self.maxpool_3_4_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
 
         self.conv_4_1_512 = Conv2D(filters=512,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv4_1")
         self.conv_4_2_512 = Conv2D(filters=512,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv4_2")
         self.conv_4_3_512 = Conv2D(filters=512,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv4_3")
         self.maxpool_4_4_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
 
         self.conv_5_1_512 = Conv2D(filters=512,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv5_1")
         self.conv_5_2_512 = Conv2D(filters=512,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv5_2")
         self.conv_5_3_512 = Conv2D(filters=512,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu")
+                                   activation="relu",
+                                   name="Conv5_3")
         self.maxpool_5_4_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
         self.idx_maxpool_5_4_2x2 = 17
 
