@@ -56,3 +56,8 @@ SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxi
 * The size of sampled patch is in [0.1, 1] of the original image size, aspect ratio is between 1/2 and 2. The patch is kept if the center of the ground truth is in it
 * Each sampled patch is resized to fixed size and horizontally flipped with probability=0.5
 * Other photo-metric distortions is applied
+
+## Implementation
+
+models/VGG16.py implements the backbone of SSD300
+models/SSD300.py contains the SSD300 class
