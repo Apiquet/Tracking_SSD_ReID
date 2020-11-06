@@ -21,56 +21,66 @@ class SSD300():
                               kernel_size=(3, 3),
                               padding="same",
                               activation="relu",
-                              dilation_rate=6))
+                              dilation_rate=6,
+                              name="FC6_to_Conv6"))
         # fc7
         self.model.add(Conv2D(filters=1024,
                               kernel_size=(1, 1),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="FC7_to_Conv7"))
         # conv8_1
         self.model.add(Conv2D(filters=256,
                               kernel_size=(1, 1),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="Conv8_1"))
         # conv8_2
         self.model.add(Conv2D(filters=512,
                               kernel_size=(3, 3),
                               strides=(2, 2),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="Conv8_2"))
         # conv9_1
         self.model.add(Conv2D(filters=128,
                               kernel_size=(1, 1),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="Conv9_1"))
         # conv9_2
         self.model.add(Conv2D(filters=256,
                               kernel_size=(3, 3),
                               strides=(2, 2),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="Conv9_2"))
         # conv10_1
         self.model.add(Conv2D(filters=128,
                               kernel_size=(1, 1),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="Conv10_1"))
         # conv10_2
         self.model.add(Conv2D(filters=256,
                               kernel_size=(3, 3),
                               strides=(2, 2),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="Conv10_2"))
         # conv11_1
         self.model.add(Conv2D(filters=128,
                               kernel_size=(1, 1),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="Conv11_1"))
         # conv11_2
         self.model.add(Conv2D(filters=256,
                               kernel_size=(3, 3),
                               strides=(2, 2),
                               padding="same",
-                              activation="relu"))
+                              activation="relu",
+                              name="Conv11_2"))
         # Temp output to remove
         self.model.add(Flatten())
         self.model.add(Dense(10, activation='softmax'))
