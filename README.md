@@ -61,3 +61,10 @@ SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxi
 
 models/VGG16.py implements the backbone of SSD300
 models/SSD300.py contains the SSD300 class
+
+## Training
+
+VGG16 test on animals, person and vehicle with the [PASCAL VOC2012 dataset](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/index.html#devkit)
+The following categories are converted to the animal class: bird, cat, cow, dog, horse, sheep
+The following categories are converted to the vehicle class: aeroplane, bicycle, boat, bus, car, motorbike, train
+All other categories are converted to negatives: bottle, chair, dining table, potted plant, sofa, tv/monitor
