@@ -7,6 +7,8 @@ Pascal VOC2012 dataset manager
 
 import pandas as pd
 import numpy as np
+import os
+from shutil import copyfile
 
 
 class DBManager():
@@ -46,7 +48,9 @@ class DBManager():
         return train_df, val_df
 
     def getCombinedClassesDf(self,
-                             voc2012path, classes: list, combinedName: str):
+                             voc2012path: str,
+                             classes: list,
+                             combinedName: str):
         """
         Method to combine classes to a new one.
         For instance, to convert bicycle and bottle to new class 'obj' call:
@@ -75,3 +79,21 @@ class DBManager():
 
     def shuffleDf(self, df):
         return df.iloc[np.random.permutation(len(df))].reset_index(drop=True)
+
+    def createDb(self,
+                 voc2012path: str,
+                 df: pd.DataFrame,
+                 output_path: str,
+                 db_name: str = "DB"):
+        db_path = output_path + '/' + db_name + '/'
+        os.makedir(db_path)
+        for category in df.className.unique():
+            os.makedir(db_path + 'class_' + category)
+
+        images_path = voc2012path + "JPEGImages/"
+        for index, row in df.iterrows():
+            original_filepath = voc2012path + '/' + row.imgName + '.jpg'
+            db_folder = db_path + 'class_' + row.className + '/'
+            db_filepath = db_folder + row.className + '_image_' +\
+                str(index).zfill(8) + '.jpg'
+            copyfile(original_filepath, db_filepath)
