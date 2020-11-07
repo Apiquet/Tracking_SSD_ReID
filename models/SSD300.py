@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+SSD300 implementation: https://arxiv.org/abs/1512.02325
+"""
+
 from .VGG16 import VGG16
 from tensorflow import keras
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
@@ -15,7 +22,7 @@ class SSD300():
         self.backbone_model = self.backbone.getModel()
 
         self.model = keras.models.Sequential(
-            self.backbone_model.layers[:self.backbone.getIdxLastMAxPoolLayer()])
+            self.backbone_model.layers[:self.backbone.getIdxLastMaxPLayer()])
         # fc6 to dilated conv
         self.model.add(Conv2D(filters=1024,
                               kernel_size=(3, 3),

@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+VGG16 implementation: https://arxiv.org/abs/1409.1556
+"""
+
 from tensorflow import keras
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
 
@@ -126,7 +133,7 @@ class VGG16():
             self.dense_6_4_10
         ])
 
-    def getIdxLastMAxPoolLayer(self):
+    def getIdxLastMaxPLayer(self):
         return self.idx_maxpool_5_4_2x2
 
     def getModel(self):
