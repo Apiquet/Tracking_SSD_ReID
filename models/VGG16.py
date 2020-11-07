@@ -98,7 +98,7 @@ class VGG16():
         self.flatten_6_1 = Flatten()
         self.dense_6_2_4096 = Dense(4096, activation='relu')
         self.dense_6_3_4096 = Dense(4096, activation='relu')
-        self.dense_6_4_10 = Dense(10, activation='softmax')
+        self.dense_6_4_10 = Dense(2, activation='softmax')
 
         '''
             Model Implementation
