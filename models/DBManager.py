@@ -6,6 +6,7 @@ Pascal VOC2012 dataset manager
 """
 
 import pandas as pd
+import numpy as np
 
 
 class DBManager():
@@ -71,3 +72,6 @@ class DBManager():
         classes_train_df.className = combinedName
         classes_val_df.className = combinedName
         return classes_train_df, classes_val_df
+
+    def shuffleDf(self, df):
+        return df.iloc[np.random.permutation(len(df))].reset_index(drop=True)
