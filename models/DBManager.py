@@ -86,14 +86,17 @@ class DBManager():
                  output_path: str,
                  db_name: str = "DB"):
         db_path = output_path + '/' + db_name + '/'
-        os.makedir(db_path)
+        os.makedirs(db_path)
         for category in df.className.unique():
-            os.makedir(db_path + 'class_' + category)
+            os.makedirs(db_path + 'class_' + category)
 
         images_path = voc2012path + "JPEGImages/"
         for index, row in df.iterrows():
-            original_filepath = voc2012path + '/' + row.imgName + '.jpg'
+            original_filepath = images_path + row.imgName + '.jpg'
             db_folder = db_path + 'class_' + row.className + '/'
             db_filepath = db_folder + row.className + '_image_' +\
                 str(index).zfill(8) + '.jpg'
             copyfile(original_filepath, db_filepath)
+
+    def concatDataframes(self, df_list: list):
+        return pd.concat(df_list)
