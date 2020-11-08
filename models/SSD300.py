@@ -16,7 +16,7 @@ class SSD300():
         super(SSD300, self).__init__()
 
         '''
-            Model Implementation
+            Cone Implementation
         '''
         self.VGG16 = VGG16(input_shape=(300, 300, 3))
         self.model = self.VGG16.getBackbone()
@@ -85,6 +85,40 @@ class SSD300():
         # Temp output to remove
         self.model.add(Flatten())
         self.model.add(Dense(num_categories, activation='softmax'))
+
+        '''
+            Confidence layers for each block
+        '''
+        self.conv_conf_stage5 = Conv2D(filters=4*(num_categories+4),
+                                       kernel_size=(3, 3),
+                                       padding="same",
+                                       activation="relu",
+                                       name="conf_stage5")
+        self.conv_conf_stage7 = Conv2D(filters=6*(num_categories+4),
+                                       kernel_size=(3, 3),
+                                       padding="same",
+                                       activation="relu",
+                                       name="conf_stage7")
+        self.conv_conf_stage8 = Conv2D(filters=6*(num_categories+4),
+                                       kernel_size=(3, 3),
+                                       padding="same",
+                                       activation="relu",
+                                       name="conf_stage8")
+        self.conv_conf_stage9 = Conv2D(filters=6*(num_categories+4),
+                                       kernel_size=(3, 3),
+                                       padding="same",
+                                       activation="relu",
+                                       name="conf_stage9")
+        self.conv_conf_stage10 = Conv2D(filters=4*(num_categories+4),
+                                        kernel_size=(3, 3),
+                                        padding="same",
+                                        activation="relu",
+                                        name="conf_stage10")
+        self.conv_conf_stage11 = Conv2D(filters=4*(num_categories+4),
+                                        kernel_size=(3, 3),
+                                        padding="same",
+                                        activation="relu",
+                                        name="conf_stage11")
 
     def getModel(self):
         return self.model
