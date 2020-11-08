@@ -15,7 +15,7 @@ class SSD300():
 
     def __init__(self, num_categories=10):
         super(SSD300, self).__init__()
-        self.num_categories =num_categories
+        self.num_categories = num_categories
 
         '''
             Cone Implementation
@@ -70,7 +70,6 @@ class SSD300():
         self.stage_10_2_256 = Conv2D(filters=256,
                                      kernel_size=(3, 3),
                                      strides=(2, 2),
-                                     padding="same",
                                      activation="relu",
                                      name="Conv10_2")
         # conv11_1
@@ -82,7 +81,6 @@ class SSD300():
         self.stage_11_2_256 = Conv2D(filters=256,
                                      kernel_size=(3, 3),
                                      strides=(2, 2),
-                                     padding="same",
                                      activation="relu",
                                      name="Conv11_2")
 
@@ -153,6 +151,9 @@ class SSD300():
                                    padding="same",
                                    activation="relu",
                                    name="loc_stage11")
+
+    def train(self):
+        return None
 
     def call(self, x):
         confs_per_stage = []
