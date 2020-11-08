@@ -89,36 +89,70 @@ class SSD300():
         '''
             Confidence layers for each block
         '''
-        self.conv_conf_stage5 = Conv2D(filters=4*(num_categories+4),
+        self.conv_conf_stage4 = Conv2D(filters=4*num_categories,
                                        kernel_size=(3, 3),
                                        padding="same",
                                        activation="relu",
-                                       name="conf_stage5")
-        self.conv_conf_stage7 = Conv2D(filters=6*(num_categories+4),
+                                       name="conf_stage4")
+        self.conv_conf_stage7 = Conv2D(filters=6*num_categories,
                                        kernel_size=(3, 3),
                                        padding="same",
                                        activation="relu",
                                        name="conf_stage7")
-        self.conv_conf_stage8 = Conv2D(filters=6*(num_categories+4),
+        self.conv_conf_stage8 = Conv2D(filters=6*num_categories,
                                        kernel_size=(3, 3),
                                        padding="same",
                                        activation="relu",
                                        name="conf_stage8")
-        self.conv_conf_stage9 = Conv2D(filters=6*(num_categories+4),
+        self.conv_conf_stage9 = Conv2D(filters=6*num_categories,
                                        kernel_size=(3, 3),
                                        padding="same",
                                        activation="relu",
                                        name="conf_stage9")
-        self.conv_conf_stage10 = Conv2D(filters=4*(num_categories+4),
+        self.conv_conf_stage10 = Conv2D(filters=4*num_categories,
                                         kernel_size=(3, 3),
                                         padding="same",
                                         activation="relu",
                                         name="conf_stage10")
-        self.conv_conf_stage11 = Conv2D(filters=4*(num_categories+4),
+        self.conv_conf_stage11 = Conv2D(filters=4*num_categories,
                                         kernel_size=(3, 3),
                                         padding="same",
                                         activation="relu",
                                         name="conf_stage11")
+
+        '''
+            Localization layers for each block
+        '''
+        self.conv_loc_stage4 = Conv2D(filters=4*4,
+                                      kernel_size=(3, 3),
+                                      padding="same",
+                                      activation="relu",
+                                      name="conf_stage4")
+        self.conv_loc_stage7 = Conv2D(filters=6*4,
+                                      kernel_size=(3, 3),
+                                      padding="same",
+                                      activation="relu",
+                                      name="conf_stage7")
+        self.conv_loc_stage8 = Conv2D(filters=6*4,
+                                      kernel_size=(3, 3),
+                                      padding="same",
+                                      activation="relu",
+                                      name="conf_stage8")
+        self.conv_loc_stage9 = Conv2D(filters=6*4,
+                                      kernel_size=(3, 3),
+                                      padding="same",
+                                      activation="relu",
+                                      name="conf_stage9")
+        self.conv_loc_stage10 = Conv2D(filters=4*4,
+                                       kernel_size=(3, 3),
+                                       padding="same",
+                                       activation="relu",
+                                       name="conf_stage10")
+        self.conv_loc_stage11 = Conv2D(filters=4*4,
+                                       kernel_size=(3, 3),
+                                       padding="same",
+                                       activation="relu",
+                                       name="conf_stage11")
 
     def getModel(self):
         return self.model
