@@ -19,143 +19,138 @@ class SSD300():
             Cone Implementation
         '''
         self.VGG16 = VGG16(input_shape=(300, 300, 3))
-        self.model = self.VGG16.getBackbone()
+        self.VGG16_stage4 = self.VGG16.getUntilStage4()
+        self.VGG16_stage_5 = self.VGG16.getStage5()
 
         # fc6 to dilated conv
-        self.model.add(Conv2D(filters=1024,
-                              kernel_size=(3, 3),
-                              padding="same",
-                              activation="relu",
-                              dilation_rate=6,
-                              name="FC6_to_Conv6"))
+        self.stage_6_1_1024 = Conv2D(filters=1024,
+                                     kernel_size=(3, 3),
+                                     padding="same",
+                                     activation="relu",
+                                     dilation_rate=6,
+                                     name="FC6_to_Conv6")
         # fc7
-        self.model.add(Conv2D(filters=1024,
-                              kernel_size=(1, 1),
-                              padding="same",
-                              activation="relu",
-                              name="FC7_to_Conv7"))
+        self.stage_7_1_1024 = Conv2D(filters=1024,
+                                     kernel_size=(1, 1),
+                                     padding="same",
+                                     activation="relu",
+                                     name="FC7_to_Conv7")
         # conv8_1
-        self.model.add(Conv2D(filters=256,
-                              kernel_size=(1, 1),
-                              activation="relu",
-                              name="Conv8_1"))
+        self.stage_8_1_256 = Conv2D(filters=256,
+                                    kernel_size=(1, 1),
+                                    activation="relu",
+                                    name="Conv8_1")
         # conv8_2
-        self.model.add(Conv2D(filters=512,
-                              kernel_size=(3, 3),
-                              strides=(2, 2),
-                              padding="same",
-                              activation="relu",
-                              name="Conv8_2"))
+        self.stage_8_2_512 = Conv2D(filters=512,
+                                    kernel_size=(3, 3),
+                                    strides=(2, 2),
+                                    padding="same",
+                                    activation="relu",
+                                    name="Conv8_2")
         # conv9_1
-        self.model.add(Conv2D(filters=128,
-                              kernel_size=(1, 1),
-                              activation="relu",
-                              name="Conv9_1"))
+        self.stage_9_1_128 = Conv2D(filters=128,
+                                    kernel_size=(1, 1),
+                                    activation="relu",
+                                    name="Conv9_1")
         # conv9_2
-        self.model.add(Conv2D(filters=256,
-                              kernel_size=(3, 3),
-                              strides=(2, 2),
-                              padding="same",
-                              activation="relu",
-                              name="Conv9_2"))
+        self.stage_9_2_256 = Conv2D(filters=256,
+                                    kernel_size=(3, 3),
+                                    strides=(2, 2),
+                                    padding="same",
+                                    activation="relu",
+                                    name="Conv9_2")
         # conv10_1
-        self.model.add(Conv2D(filters=128,
-                              kernel_size=(1, 1),
-                              activation="relu",
-                              name="Conv10_1"))
+        self.stage_10_1_128 = Conv2D(filters=128,
+                                     kernel_size=(1, 1),
+                                     activation="relu",
+                                     name="Conv10_1")
         # conv10_2
-        self.model.add(Conv2D(filters=256,
-                              kernel_size=(3, 3),
-                              strides=(2, 2),
-                              padding="same",
-                              activation="relu",
-                              name="Conv10_2"))
+        self.stage_10_2_256 = Conv2D(filters=256,
+                                     kernel_size=(3, 3),
+                                     strides=(2, 2),
+                                     padding="same",
+                                     activation="relu",
+                                     name="Conv10_2")
         # conv11_1
-        self.model.add(Conv2D(filters=128,
-                              kernel_size=(1, 1),
-                              activation="relu",
-                              name="Conv11_1"))
+        self.stage_11_1_128 = Conv2D(filters=128,
+                                     kernel_size=(1, 1),
+                                     activation="relu",
+                                     name="Conv11_1")
         # conv11_2
-        self.model.add(Conv2D(filters=256,
-                              kernel_size=(3, 3),
-                              strides=(2, 2),
-                              padding="same",
-                              activation="relu",
-                              name="Conv11_2"))
-        # Temp output to remove
-        self.model.add(Flatten())
-        self.model.add(Dense(num_categories, activation='softmax'))
+        self.stage_11_2_128 = Conv2D(filters=256,
+                                     kernel_size=(3, 3),
+                                     strides=(2, 2),
+                                     padding="same",
+                                     activation="relu",
+                                     name="Conv11_2")
 
         '''
             Confidence layers for each block
         '''
-        self.conv_conf_stage4 = Conv2D(filters=4*num_categories,
-                                       kernel_size=(3, 3),
-                                       padding="same",
-                                       activation="relu",
-                                       name="conf_stage4")
-        self.conv_conf_stage7 = Conv2D(filters=6*num_categories,
-                                       kernel_size=(3, 3),
-                                       padding="same",
-                                       activation="relu",
-                                       name="conf_stage7")
-        self.conv_conf_stage8 = Conv2D(filters=6*num_categories,
-                                       kernel_size=(3, 3),
-                                       padding="same",
-                                       activation="relu",
-                                       name="conf_stage8")
-        self.conv_conf_stage9 = Conv2D(filters=6*num_categories,
-                                       kernel_size=(3, 3),
-                                       padding="same",
-                                       activation="relu",
-                                       name="conf_stage9")
-        self.conv_conf_stage10 = Conv2D(filters=4*num_categories,
-                                        kernel_size=(3, 3),
-                                        padding="same",
-                                        activation="relu",
-                                        name="conf_stage10")
-        self.conv_conf_stage11 = Conv2D(filters=4*num_categories,
-                                        kernel_size=(3, 3),
-                                        padding="same",
-                                        activation="relu",
-                                        name="conf_stage11")
+        self.stage_4_conf = Conv2D(filters=4*num_categories,
+                                   kernel_size=(3, 3),
+                                   padding="same",
+                                   activation="relu",
+                                   name="conf_stage4")
+        self.stage_7_conf = Conv2D(filters=6*num_categories,
+                                   kernel_size=(3, 3),
+                                   padding="same",
+                                   activation="relu",
+                                   name="conf_stage7")
+        self.stage_8_conf = Conv2D(filters=6*num_categories,
+                                   kernel_size=(3, 3),
+                                   padding="same",
+                                   activation="relu",
+                                   name="conf_stage8")
+        self.stage_9_conf = Conv2D(filters=6*num_categories,
+                                   kernel_size=(3, 3),
+                                   padding="same",
+                                   activation="relu",
+                                   name="conf_stage9")
+        self.stage_10_conf = Conv2D(filters=4*num_categories,
+                                    kernel_size=(3, 3),
+                                    padding="same",
+                                    activation="relu",
+                                    name="conf_stage10")
+        self.stage_11_conf = Conv2D(filters=4*num_categories,
+                                    kernel_size=(3, 3),
+                                    padding="same",
+                                    activation="relu",
+                                    name="conf_stage11")
 
         '''
             Localization layers for each block
         '''
-        self.conv_loc_stage4 = Conv2D(filters=4*4,
-                                      kernel_size=(3, 3),
-                                      padding="same",
-                                      activation="relu",
-                                      name="conf_stage4")
-        self.conv_loc_stage7 = Conv2D(filters=6*4,
-                                      kernel_size=(3, 3),
-                                      padding="same",
-                                      activation="relu",
-                                      name="conf_stage7")
-        self.conv_loc_stage8 = Conv2D(filters=6*4,
-                                      kernel_size=(3, 3),
-                                      padding="same",
-                                      activation="relu",
-                                      name="conf_stage8")
-        self.conv_loc_stage9 = Conv2D(filters=6*4,
-                                      kernel_size=(3, 3),
-                                      padding="same",
-                                      activation="relu",
-                                      name="conf_stage9")
-        self.conv_loc_stage10 = Conv2D(filters=4*4,
-                                       kernel_size=(3, 3),
-                                       padding="same",
-                                       activation="relu",
-                                       name="conf_stage10")
-        self.conv_loc_stage11 = Conv2D(filters=4*4,
-                                       kernel_size=(3, 3),
-                                       padding="same",
-                                       activation="relu",
-                                       name="conf_stage11")
-
-    def getModel(self):
-        return self.model
+        self.stage_4_loc = Conv2D(filters=4*4,
+                                  kernel_size=(3, 3),
+                                  padding="same",
+                                  activation="relu",
+                                  name="loc_stage4")
+        self.stage_7_loc = Conv2D(filters=6*4,
+                                  kernel_size=(3, 3),
+                                  padding="same",
+                                  activation="relu",
+                                  name="loc_stage7")
+        self.stage_8_loc = Conv2D(filters=6*4,
+                                  kernel_size=(3, 3),
+                                  padding="same",
+                                  activation="relu",
+                                  name="loc_stage8")
+        self.stage_9_loc = Conv2D(filters=6*4,
+                                  kernel_size=(3, 3),
+                                  padding="same",
+                                  activation="relu",
+                                  name="loc_stage9")
+        self.stage_10_loc = Conv2D(filters=4*4,
+                                   kernel_size=(3, 3),
+                                   padding="same",
+                                   activation="relu",
+                                   name="loc_stage10")
+        self.stage_11_loc = Conv2D(filters=4*4,
+                                   kernel_size=(3, 3),
+                                   padding="same",
+                                   activation="relu",
+                                   name="loc_stage11")
 
     def call(self, x):
         return self.model(x)
