@@ -29,7 +29,9 @@ class VGG16():
                                   padding="same",
                                   activation="relu",
                                   name="Conv1_2")
-        self.maxpool_1_3_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
+        self.maxpool_1_3_2x2 = MaxPool2D(pool_size=(2, 2),
+                                         strides=(2, 2),
+                                         padding='same')
 
         self.conv_2_1_128 = Conv2D(filters=128,
                                    kernel_size=(3, 3),
@@ -41,7 +43,9 @@ class VGG16():
                                    padding="same",
                                    activation="relu",
                                    name="Conv2_2")
-        self.maxpool_2_3_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
+        self.maxpool_2_3_2x2 = MaxPool2D(pool_size=(2, 2),
+                                         strides=(2, 2),
+                                         padding='same')
 
         self.conv_3_1_256 = Conv2D(filters=256,
                                    kernel_size=(3, 3),
@@ -58,7 +62,9 @@ class VGG16():
                                    padding="same",
                                    activation="relu",
                                    name="Conv3_3")
-        self.maxpool_3_4_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
+        self.maxpool_3_4_2x2 = MaxPool2D(pool_size=(2, 2),
+                                         strides=(2, 2),
+                                         padding='same')
 
         self.conv_4_1_512 = Conv2D(filters=512,
                                    kernel_size=(3, 3),
@@ -75,7 +81,9 @@ class VGG16():
                                    padding="same",
                                    activation="relu",
                                    name="Conv4_3")
-        self.maxpool_4_4_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
+        self.maxpool_4_4_2x2 = MaxPool2D(pool_size=(2, 2),
+                                         strides=(2, 2),
+                                         padding='same')
 
         self.conv_5_1_512 = Conv2D(filters=512,
                                    kernel_size=(3, 3),
@@ -92,8 +100,10 @@ class VGG16():
                                    padding="same",
                                    activation="relu",
                                    name="Conv5_3")
-        self.maxpool_5_4_2x2 = MaxPool2D(pool_size=(2, 2), strides=(2, 2))
-        self.idx_maxpool_5_4_2x2 = 17
+        self.maxpool_5_4_2x2 = MaxPool2D(pool_size=(2, 2),
+                                         strides=(2, 2),
+                                         padding='same')
+        self.idx_5th_block = 17
 
         self.flatten_6_1 = Flatten()
         self.dense_6_2_4096 = Dense(4096, activation='relu')
@@ -126,18 +136,18 @@ class VGG16():
             self.conv_5_2_512,
             self.conv_5_3_512,
             self.maxpool_5_4_2x2,
-            # Stage 5
+            # Stage 6
             self.flatten_6_1,
             self.dense_6_2_4096,
             self.dense_6_3_4096,
             self.dense_6_4_10
         ])
 
-    def getIdxLastMaxPLayer(self):
-        return self.idx_maxpool_5_4_2x2
-
     def getModel(self):
         return self.model
+
+    def getBackbone(self):
+        return keras.models.Sequential(self.model.layers[:self.idx_5th_block])
 
     def call(self, x):
         return self.model(x)
