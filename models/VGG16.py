@@ -81,6 +81,7 @@ class VGG16():
                                    padding="same",
                                    activation="relu",
                                    name="Conv4_3")
+        self.idx_4th_block = 12
         self.maxpool_4_4_2x2 = MaxPool2D(pool_size=(2, 2),
                                          strides=(2, 2),
                                          padding='same')
@@ -100,10 +101,10 @@ class VGG16():
                                    padding="same",
                                    activation="relu",
                                    name="Conv5_3")
+        self.idx_5th_block = 16
         self.maxpool_5_4_2x2 = MaxPool2D(pool_size=(2, 2),
                                          strides=(2, 2),
                                          padding='same')
-        self.idx_5th_block = 17
 
         self.flatten_6_1 = Flatten()
         self.dense_6_2_4096 = Dense(4096, activation='relu')
@@ -146,8 +147,15 @@ class VGG16():
     def getModel(self):
         return self.model
 
-    def getBackbone(self):
-        return keras.models.Sequential(self.model.layers[:self.idx_5th_block])
+    def getUntilStage4(self):
+        return keras.models.Sequential(
+            self.model.layers[:self.idx_4th_block+1])
+
+    def getStage5(self):
+        return keras.models.Sequential(
+            self.conv_5_1_512,
+            self.conv_5_2_512,
+            self.conv_5_3_512)
 
     def call(self, x):
         return self.model(x)
