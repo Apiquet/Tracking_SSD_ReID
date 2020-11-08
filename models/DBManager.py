@@ -85,6 +85,27 @@ class DBManager():
                  df: pd.DataFrame,
                  output_path: str,
                  db_name: str = "DB"):
+        """
+        Method to create a dataset compatible with:
+        tf.keras.preprocessing.image_dataset_from_directory
+        It creates the following architecture at the specified output path:
+        output_path/
+            class_a/
+                a_image_00000000.jpg
+                a_image_00000001.jpg
+                ...
+            class_b/
+                b_image_00000000.jpg
+                b_image_00000001.jpg
+                ...
+            ...
+
+        Args:
+            - (str)  VOC2012 path
+            - (pandas.DataFrame) two columns dataframe [imgName, className]
+            - (str)  output path
+            - (str)  dataset name, default is 'DB'
+        """
         db_path = output_path + '/' + db_name + '/'
         os.makedirs(db_path)
         for category in df.className.unique():
@@ -99,4 +120,13 @@ class DBManager():
             copyfile(original_filepath, db_filepath)
 
     def concatDataframes(self, df_list: list):
+        """
+        Method to concatenate list of dataframes
+
+        Args:
+            - (list)  list of dataframe to combine
+
+        Return:
+            - (pandas.DataFrame) concatenated dataframe
+        """
         return pd.concat(df_list)
