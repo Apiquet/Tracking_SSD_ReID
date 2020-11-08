@@ -6,8 +6,9 @@ SSD300 implementation: https://arxiv.org/abs/1512.02325
 """
 
 from .VGG16 import VGG16
-from tensorflow import keras
+import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
+keras = tf.keras
 
 
 class SSD300():
@@ -19,7 +20,7 @@ class SSD300():
             Cone Implementation
         '''
         self.VGG16 = VGG16(input_shape=(300, 300, 3))
-        self.VGG16_stage4 = self.VGG16.getUntilStage4()
+        self.VGG16_stage_4 = self.VGG16.getUntilStage4()
         self.VGG16_stage_5 = self.VGG16.getStage5()
 
         # fc6 to dilated conv
@@ -77,7 +78,7 @@ class SSD300():
                                      activation="relu",
                                      name="Conv11_1")
         # conv11_2
-        self.stage_11_2_128 = Conv2D(filters=256,
+        self.stage_11_2_256 = Conv2D(filters=256,
                                      kernel_size=(3, 3),
                                      strides=(2, 2),
                                      padding="same",
@@ -153,4 +154,61 @@ class SSD300():
                                    name="loc_stage11")
 
     def call(self, x):
-        return self.model(x)
+        confs_per_stage = []
+        locs_per_stage = []
+
+        x = self.VGG16_stage_4(x)
+        tmp_conf = self.stage_4_conf(x)
+        confs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_conf.shape[0], -1, self.num_classes]))
+        tmp_loc = self.stage_4_loc(x)
+        locs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_loc.shape[0], -1, 4]))
+
+        x = self.VGG16_stage_5(x)
+        x = self.stage_6_1_1024(x)
+        x = self.stage_7_1_1024(x)
+        tmp_conf = self.stage_7_conf(x)
+        confs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_conf.shape[0], -1, self.num_classes]))
+        tmp_loc = self.stage_7_loc(x)
+        locs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_loc.shape[0], -1, 4]))
+
+        x = self.stage_8_1_256(x)
+        x = self.stage_8_2_512(x)
+        tmp_conf = self.stage_8_conf(x)
+        confs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_conf.shape[0], -1, self.num_classes]))
+        tmp_loc = self.stage_8_loc(x)
+        locs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_loc.shape[0], -1, 4]))
+
+        x = self.stage_9_1_128(x)
+        x = self.stage_9_2_256(x)
+        tmp_conf = self.stage_9_conf(x)
+        confs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_conf.shape[0], -1, self.num_classes]))
+        tmp_loc = self.stage_9_loc(x)
+        locs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_loc.shape[0], -1, 4]))
+
+        x = self.stage_10_1_128(x)
+        x = self.stage_10_2_256(x)
+        tmp_conf = self.stage_10_conf(x)
+        confs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_conf.shape[0], -1, self.num_classes]))
+        tmp_loc = self.stage_10_loc(x)
+        locs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_loc.shape[0], -1, 4]))
+
+        x = self.stage_11_1_128(x)
+        x = self.stage_11_2_256(x)
+        tmp_conf = self.stage_11_conf(x)
+        confs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_conf.shape[0], -1, self.num_classes]))
+        tmp_loc = self.stage_11_loc(x)
+        locs_per_stage.append(
+            tf.reshape(tmp_conf, [tmp_loc.shape[0], -1, 4]))
+
+        return confs_per_stage, locs_per_stage
