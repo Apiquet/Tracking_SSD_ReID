@@ -81,7 +81,6 @@ class VGG16():
                                    padding="same",
                                    activation="relu",
                                    name="Conv4_3")
-        self.idx_4th_block = 12
         self.maxpool_4_4_2x2 = MaxPool2D(pool_size=(2, 2),
                                          strides=(2, 2),
                                          padding='same')
@@ -101,7 +100,6 @@ class VGG16():
                                    padding="same",
                                    activation="relu",
                                    name="Conv5_3")
-        self.idx_5th_block = 16
         self.maxpool_5_4_2x2 = MaxPool2D(pool_size=(2, 2),
                                          strides=(2, 2),
                                          padding='same')
@@ -111,10 +109,8 @@ class VGG16():
         self.dense_6_3_4096 = Dense(4096, activation='relu')
         self.dense_6_4_10 = Dense(2, activation='softmax')
 
-        '''
-            Model Implementation
-        '''
-        self.model = keras.models.Sequential([
+    def getModel(self):
+        return keras.models.Sequential([
             self.conv_1_1_64,
             self.conv_1_2_64,
             self.maxpool_1_3_2x2,
@@ -141,21 +137,33 @@ class VGG16():
             self.flatten_6_1,
             self.dense_6_2_4096,
             self.dense_6_3_4096,
-            self.dense_6_4_10
-        ])
-
-    def getModel(self):
-        return self.model
+            self.dense_6_4_10])
 
     def getUntilStage4(self):
-        return keras.models.Sequential(
-            self.model.layers[:self.idx_4th_block+1])
+        return keras.models.Sequential([
+            self.conv_1_1_64,
+            self.conv_1_2_64,
+            self.maxpool_1_3_2x2,
+            # Stage 2
+            self.conv_2_1_128,
+            self.conv_2_2_128,
+            self.maxpool_2_3_2x2,
+            # Stage 3
+            self.conv_3_1_256,
+            self.conv_3_2_256,
+            self.conv_3_3_256,
+            self.maxpool_3_4_2x2,
+            # Stage 4
+            self.conv_4_1_512,
+            self.conv_4_2_512,
+            self.conv_4_3_512])
 
     def getStage5(self):
-        return keras.models.Sequential(
+        return keras.models.Sequential([
+            self.maxpool_4_4_2x2,
             self.conv_5_1_512,
             self.conv_5_2_512,
-            self.conv_5_3_512)
+            self.conv_5_3_512])
 
     def call(self, x):
         return self.model(x)
