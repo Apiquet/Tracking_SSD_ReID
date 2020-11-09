@@ -155,6 +155,21 @@ class SSD300():
     def train(self):
         return None
 
+    def getCone(self):
+        return keras.models.Sequential([
+            self.VGG16_stage_4,
+            self.VGG16_stage_5,
+            self.stage_6_1_1024,
+            self.stage_7_1_1024,
+            self.stage_8_1_256,
+            self.stage_8_2_512,
+            self.stage_9_1_128,
+            self.stage_9_2_256,
+            self.stage_10_1_128,
+            self.stage_10_2_256,
+            self.stage_11_1_128,
+            self.stage_11_2_256])
+
     def call(self, x):
         confs_per_stage = []
         locs_per_stage = []

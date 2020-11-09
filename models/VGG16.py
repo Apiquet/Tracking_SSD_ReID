@@ -164,6 +164,3 @@ class VGG16():
             self.conv_5_1_512,
             self.conv_5_2_512,
             self.conv_5_3_512])
-
-    def call(self, x):
-        return self.model(x)
