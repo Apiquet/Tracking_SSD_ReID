@@ -5,9 +5,11 @@
 SSD300 implementation: https://arxiv.org/abs/1512.02325
 """
 
-from .VGG16 import VGG16
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
+
+from .VGG16 import VGG16
 
 
 class SSD300():
@@ -150,6 +152,18 @@ class SSD300():
                                    activation="relu",
                                    name="loc_stage11")
 
+        '''
+            Default boxes parameters
+        '''
+        self.ratios = [[1, 1/2, 2],
+                       [1, 1/2, 2, 1/3, 3],
+                       [1, 1/2, 2, 1/3, 3],
+                       [1, 1/2, 2, 1/3, 3],
+                       [1, 1/2, 2],
+                       [1, 1/2, 2]]
+        self.scales = [0.1, 0.2, 0.375, 0.55, 0.725, 0.9]
+        self.fm_resolutions = [38, 19, 10, 5, 3, 1]
+
     def train(self):
         return None
 
@@ -168,36 +182,66 @@ class SSD300():
             self.stage_11_1_128,
             self.stage_11_2_256])
 
+    def getDefaultBoxes(self):
+        boxes = []
+        for fm_idx in range(len(self.fm_resolutions)):
+            for i in range(self.fm_resolutions[fm_idx]):
+                for j in range(self.fm_resolutions[fm_idx]):
+                    # box with scale 1
+                    boxes.append([i, j,
+                                  self.scales[fm_idx],
+                                  self.scales[fm_idx]])
+                    # box with scale 0.5
+                    boxes.append([i, j,
+                                  self.scales[fm_idx]/2.,
+                                  self.scales[fm_idx]/2.])
+                    # box with aspect ratio
+                    for ratio in self.ratios[fm_idx]:
+                        boxes.append([i, j,
+                                      self.scales[fm_idx] * np.sqrt(ratio),
+                                      self.scales[fm_idx] / np.sqrt(ratio)])
+        return tf.constant(boxes)
+
+    def train(self):
+        # todo
+        return self.getDefaultBoxes()
+
     def call(self, x):
         confs_per_stage = []
         locs_per_stage = []
 
+        # stage 4
         x = self.VGG16_stage_4(x)
         x_normed = self.stage_4_batch_norm(x)
         confs_per_stage.append(self.stage_4_conf(x_normed))
         locs_per_stage.append(self.stage_4_loc(x_normed))
 
+        # stage 7
         x = self.VGG16_stage_5(x)
         x = self.stage_6_1_1024(x)
         x = self.stage_7_1_1024(x)
         confs_per_stage.append(self.stage_7_conf(x))
         locs_per_stage.append(self.stage_7_loc(x))
 
+        # stage 8
         x = self.stage_8_1_256(x)
         x = self.stage_8_2_512(x)
         confs_per_stage.append(self.stage_8_conf(x))
         locs_per_stage.append(self.stage_8_loc(x))
 
+        # stage 9
         x = self.stage_9_1_128(x)
         x = self.stage_9_2_256(x)
         confs_per_stage.append(self.stage_9_conf(x))
         locs_per_stage.append(self.stage_9_loc(x))
 
+        # stage 10
         x = self.stage_10_1_128(x)
         x = self.stage_10_2_256(x)
         confs_per_stage.append(self.stage_10_conf(x))
         locs_per_stage.append(self.stage_10_loc(x))
 
+        # stage 11
         x = self.stage_11_1_128(x)
         x = self.stage_11_2_256(x)
         confs_per_stage.append(self.stage_11_conf(x))
