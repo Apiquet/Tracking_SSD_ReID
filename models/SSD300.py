@@ -8,7 +8,6 @@ SSD300 implementation: https://arxiv.org/abs/1512.02325
 from .VGG16 import VGG16
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
-keras = tf.keras
 
 
 class SSD300():
@@ -85,6 +84,7 @@ class SSD300():
         '''
             Confidence layers for each block
         '''
+        self.stage_4_batch_norm = tf.keras.layers.BatchNormalization()
         self.stage_4_conf = Conv2D(filters=4*num_categories,
                                    kernel_size=(3, 3),
                                    padding="same",
@@ -154,7 +154,7 @@ class SSD300():
         return None
 
     def getCone(self):
-        return keras.models.Sequential([
+        return tf.keras.models.Sequential([
             self.VGG16_stage_4,
             self.VGG16_stage_5,
             self.stage_6_1_1024,
@@ -173,8 +173,9 @@ class SSD300():
         locs_per_stage = []
 
         x = self.VGG16_stage_4(x)
-        confs_per_stage.append(self.stage_4_conf(x))
-        locs_per_stage.append(self.stage_4_loc(x))
+        x_normed = self.stage_4_batch_norm(x)
+        confs_per_stage.append(self.stage_4_conf(x_normed))
+        locs_per_stage.append(self.stage_4_loc(x_normed))
 
         x = self.VGG16_stage_5(x)
         x = self.stage_6_1_1024(x)
