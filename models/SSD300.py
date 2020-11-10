@@ -173,51 +173,33 @@ class SSD300():
         locs_per_stage = []
 
         x = self.VGG16_stage_4(x)
-        conf = self.stage_4_conf(x)
-        confs_per_stage.append(
-            tf.reshape(conf, [conf.shape[0], -1, self.num_categories]))
-        loc = self.stage_4_loc(x)
-        locs_per_stage.append(tf.reshape(loc, [loc.shape[0], -1, 4]))
+        confs_per_stage.append(self.stage_4_conf(x))
+        locs_per_stage.append(self.stage_4_loc(x))
 
         x = self.VGG16_stage_5(x)
         x = self.stage_6_1_1024(x)
         x = self.stage_7_1_1024(x)
-        conf = self.stage_7_conf(x)
-        confs_per_stage.append(
-            tf.reshape(conf, [conf.shape[0], -1, self.num_categories]))
-        loc = self.stage_7_loc(x)
-        locs_per_stage.append(tf.reshape(loc, [loc.shape[0], -1, 4]))
+        confs_per_stage.append(self.stage_7_conf(x))
+        locs_per_stage.append(self.stage_7_loc(x))
 
         x = self.stage_8_1_256(x)
         x = self.stage_8_2_512(x)
-        conf = self.stage_8_conf(x)
-        confs_per_stage.append(
-            tf.reshape(conf, [conf.shape[0], -1, self.num_categories]))
-        loc = self.stage_8_loc(x)
-        locs_per_stage.append(tf.reshape(loc, [loc.shape[0], -1, 4]))
+        confs_per_stage.append(self.stage_8_conf(x))
+        locs_per_stage.append(self.stage_8_loc(x))
 
         x = self.stage_9_1_128(x)
         x = self.stage_9_2_256(x)
-        conf = self.stage_9_conf(x)
-        confs_per_stage.append(
-            tf.reshape(conf, [conf.shape[0], -1, self.num_categories]))
-        loc = self.stage_9_loc(x)
-        locs_per_stage.append(tf.reshape(loc, [loc.shape[0], -1, 4]))
+        confs_per_stage.append(self.stage_9_conf(x))
+        locs_per_stage.append(self.stage_9_loc(x))
 
         x = self.stage_10_1_128(x)
         x = self.stage_10_2_256(x)
-        conf = self.stage_10_conf(x)
-        confs_per_stage.append(
-            tf.reshape(conf, [conf.shape[0], -1, self.num_categories]))
-        loc = self.stage_10_loc(x)
-        locs_per_stage.append(tf.reshape(loc, [loc.shape[0], -1, 4]))
+        confs_per_stage.append(self.stage_10_conf(x))
+        locs_per_stage.append(self.stage_10_loc(x))
 
         x = self.stage_11_1_128(x)
         x = self.stage_11_2_256(x)
-        conf = self.stage_11_conf(x)
-        confs_per_stage.append(
-            tf.reshape(conf, [conf.shape[0], -1, self.num_categories]))
-        loc = self.stage_11_loc(x)
-        locs_per_stage.append(tf.reshape(loc, [loc.shape[0], -1, 4]))
+        confs_per_stage.append(self.stage_11_conf(x))
+        locs_per_stage.append(self.stage_11_loc(x))
 
         return confs_per_stage, locs_per_stage
