@@ -229,7 +229,7 @@ class SSD300():
     def calculateLoss(self, confs_pred, confs_gt, locs_pred, locs_gt):
         positives_idx = confs_gt > 0
         positives_number = tf.reduce_sum(
-            tf.dtypes.cast(positives_idx, tf.uint8), axis=1)
+            tf.dtypes.cast(positives_idx, tf.float32), axis=1)
         confs_loss_before_mining = self.before_mining_crossentropy(confs_gt,
                                                                    confs_pred)
 
@@ -238,14 +238,18 @@ class SSD300():
         negatives_rank = tf.argsort(confs_loss_before_mining, axis=1,
                                     direction='DESCENDING')
         rank_idx = tf.keras.backend.eval(negatives_rank)
-        negatives_idx = rank_idx <= negatives_number
+        negatives_idx = tf.expand_dims(rank_idx <= negatives_number, 2)
 
         # loss calculation (pos+neg for conf, pos for loc)
         confs_idx = tf.math.logical_or(positives_idx, negatives_idx)
-        confs_loss = self.after_mining_crossentropy(confs_gt[confs_idx],
-                                                    confs_pred[confs_idx])
-        locs_loss = self.smooth_l1(locs_gt[positives_idx],
-                                   locs_pred[positives_idx])
+        confs_idx_rpt = tf.repeat(confs_idx, repeats=[10], axis=-1)
+
+        confs_loss = self.after_mining_crossentropy(
+            tf.reshape(confs_gt[confs_idx], [-1, confs_gt.shape[-1]]),
+            tf.reshape(confs_pred[confs_idx_rpt], [-1, confs_pred.shape[-1]]))
+        positives_idx_repeated = tf.repeat(confs_idx, repeats=[4], axis=-1)
+        locs_loss = self.smooth_l1(locs_gt[positives_idx_repeated],
+                                   locs_pred[positives_idx_repeated])
 
         confs_loss = confs_loss / positives_number
         locs_loss = locs_loss / positives_number
@@ -310,5 +314,12 @@ class SSD300():
                                         self.stage_11_boxes.shape[0])
         confs_per_stage.append(conf)
         locs_per_stage.append(loc)
+
+        fake_conf_gt = tf.random.uniform(shape=[confs_per_stage[0].shape[0],
+                                                confs_per_stage[0].shape[1],
+                                                1],
+                                         minval=0, maxval=9, dtype=tf.int32)
+        self.calculateLoss(confs_per_stage[0], fake_conf_gt,
+                           locs_per_stage[0], locs_per_stage[0])
 
         return confs_per_stage, locs_per_stage
