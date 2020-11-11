@@ -187,6 +187,9 @@ class SSD300():
         return None
 
     def getCone(self):
+        """
+        Method to get the cone of the SSD architecture
+        """
         return tf.keras.models.Sequential([
             self.VGG16_stage_4,
             self.VGG16_stage_5,
@@ -202,6 +205,16 @@ class SSD300():
             self.stage_11_2_256])
 
     def getDefaultBoxes(self):
+        """
+        Method to generate all default boxes for all the feature maps
+        There are 6 stages to output boxes so this method returns a list of
+        size 6 with all the boxes:
+            width feature maps * height feature maps * number of boxes per loc
+        For instance with the stage 4: 38x38x4=5776 default boxes
+
+        Return:
+            - (list of tf.Tensor) boxes per stage, 4 parameters cx, cy, w, h
+        """
         boxes = []
         for fm_idx in range(len(self.fm_resolutions)):
             boxes_fm_i = []
@@ -221,12 +234,46 @@ class SSD300():
         return boxes
 
     def reshapeConfLoc(self, conf, loc, number_of_boxes):
+        """
+        Method to reshape the confidences and localizations convolutions
+        W = width of the feature map
+        H = height of the feature map
+        B = mini-batch size
+        N = number of boxes per location (should be 4 or 6)
+        Confidences from [B, W, H, N * number of classes]
+                    to   [B, number of default boxes, number of classes]
+        loc         from [B, W, H, N * 4]
+                    to   [B, number of default boxes, 4]
+        
+        Args:
+            - (tf.Tensor) confidences of shape [B, W, H, N * number classes]
+            - (tf.Tensor) loc of shape [B, W, H, N * 4]
+            - (int) number of boxes
+
+        Return:
+            - (tf.Tensor) confidences of shape [B, n boxes, n classes]
+            - (tf.Tensor) loc of shape [B, number of default boxes, 4]
+        """
         conf = tf.reshape(conf, [conf.shape[0], number_of_boxes,
                                  self.num_categories])
         loc = tf.reshape(loc, [loc.shape[0], number_of_boxes, 4])
         return conf, loc
 
     def calculateLoss(self, confs_pred, confs_gt, locs_pred, locs_gt):
+        """
+        Method to calculate loss for confidences and localization offsets
+        B = mini-batch size
+        
+        Args:
+            - (tf.Tensor) confidences prediction: [B, N boxes, n classes]
+            - (tf.Tensor) confidence ground truth:  [B, N boxes, 1]
+            - (tf.Tensor) localization offsets prediction: [B, N boxes, 4]
+            - (tf.Tensor) localization offsets ground truth: [B, N boxes, 4]
+
+        Return:
+            - (tf.Tensor) confidences of shape [B, 1]
+            - (tf.Tensor) loc of shape [B, 1]
+        """
         positives_idx = confs_gt > 0
         positives_number = tf.reduce_sum(
             tf.dtypes.cast(positives_idx, tf.float32), axis=1)
