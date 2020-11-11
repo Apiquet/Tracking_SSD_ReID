@@ -209,6 +209,12 @@ class SSD300():
             boxes.append(tf.constant((boxes_fm_i)))
         return boxes
 
+    def reshapeConfLoc(self, conf, loc, number_of_boxes):
+        conf = tf.reshape(conf, [conf.shape[0], number_of_boxes,
+                                 self.num_categories])
+        loc = tf.reshape(loc, [loc.shape[0], number_of_boxes, 4])
+        return conf, loc
+
     def call(self, x):
         confs_per_stage = []
         locs_per_stage = []
@@ -216,38 +222,56 @@ class SSD300():
         # stage 4
         x = self.VGG16_stage_4(x)
         x_normed = self.stage_4_batch_norm(x)
-        confs_per_stage.append(self.stage_4_conf(x_normed))
-        locs_per_stage.append(self.stage_4_loc(x_normed))
+        conf, loc = self.reshapeConfLoc(self.stage_4_conf(x_normed),
+                                        self.stage_4_loc(x_normed),
+                                        self.stage_4_boxes.shape[0])
+        confs_per_stage.append(conf)
+        locs_per_stage.append(loc)
 
         # stage 7
         x = self.VGG16_stage_5(x)
         x = self.stage_6_1_1024(x)
         x = self.stage_7_1_1024(x)
-        confs_per_stage.append(self.stage_7_conf(x))
-        locs_per_stage.append(self.stage_7_loc(x))
+        conf, loc = self.reshapeConfLoc(self.stage_7_conf(x),
+                                        self.stage_7_loc(x),
+                                        self.stage_7_boxes.shape[0])
+        confs_per_stage.append(conf)
+        locs_per_stage.append(loc)
 
         # stage 8
         x = self.stage_8_1_256(x)
         x = self.stage_8_2_512(x)
-        confs_per_stage.append(self.stage_8_conf(x))
-        locs_per_stage.append(self.stage_8_loc(x))
+        conf, loc = self.reshapeConfLoc(self.stage_8_conf(x),
+                                        self.stage_8_loc(x),
+                                        self.stage_8_boxes.shape[0])
+        confs_per_stage.append(conf)
+        locs_per_stage.append(loc)
 
         # stage 9
         x = self.stage_9_1_128(x)
         x = self.stage_9_2_256(x)
-        confs_per_stage.append(self.stage_9_conf(x))
-        locs_per_stage.append(self.stage_9_loc(x))
+        conf, loc = self.reshapeConfLoc(self.stage_9_conf(x),
+                                        self.stage_9_loc(x),
+                                        self.stage_9_boxes.shape[0])
+        confs_per_stage.append(conf)
+        locs_per_stage.append(loc)
 
         # stage 10
         x = self.stage_10_1_128(x)
         x = self.stage_10_2_256(x)
-        confs_per_stage.append(self.stage_10_conf(x))
-        locs_per_stage.append(self.stage_10_loc(x))
+        conf, loc = self.reshapeConfLoc(self.stage_10_conf(x),
+                                        self.stage_10_loc(x),
+                                        self.stage_10_boxes.shape[0])
+        confs_per_stage.append(conf)
+        locs_per_stage.append(loc)
 
         # stage 11
         x = self.stage_11_1_128(x)
         x = self.stage_11_2_256(x)
-        confs_per_stage.append(self.stage_11_conf(x))
-        locs_per_stage.append(self.stage_11_loc(x))
+        conf, loc = self.reshapeConfLoc(self.stage_11_conf(x),
+                                        self.stage_11_loc(x),
+                                        self.stage_11_boxes.shape[0])
+        confs_per_stage.append(conf)
+        locs_per_stage.append(loc)
 
         return confs_per_stage, locs_per_stage
