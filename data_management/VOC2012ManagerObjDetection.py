@@ -29,6 +29,16 @@ class VOC2012ManagerObjDetection():
         self.number_samples = len(self.images_name)
 
     def getImages(self, images_name: list):
+        """
+        Method to get images in a tensor shape
+
+        Args:
+            - (list) images name without extension
+
+        Return:
+            - (tf.Tensor) Tensor of shape:
+                (number of images, self.img_resolution)
+        """
         images = []
         for img in images_name:
             image = tf.keras.preprocessing.image.load_img(
