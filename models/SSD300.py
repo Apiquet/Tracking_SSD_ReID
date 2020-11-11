@@ -164,6 +164,14 @@ class SSD300():
         self.scales = [0.1, 0.2, 0.375, 0.55, 0.725, 0.9]
         self.fm_resolutions = [38, 19, 10, 5, 3, 1]
 
+        self.default_boxes = self.getDefaultBoxes()
+        self.stage_4_boxes = self.default_boxes[0]
+        self.stage_7_boxes = self.default_boxes[1]
+        self.stage_8_boxes = self.default_boxes[2]
+        self.stage_9_boxes = self.default_boxes[3]
+        self.stage_10_boxes = self.default_boxes[4]
+        self.stage_11_boxes = self.default_boxes[5]
+
     def train(self):
         return None
 
@@ -185,26 +193,21 @@ class SSD300():
     def getDefaultBoxes(self):
         boxes = []
         for fm_idx in range(len(self.fm_resolutions)):
+            boxes_fm_i = []
             for i in range(self.fm_resolutions[fm_idx]):
                 for j in range(self.fm_resolutions[fm_idx]):
-                    # box with scale 1
-                    boxes.append([i, j,
-                                  self.scales[fm_idx],
-                                  self.scales[fm_idx]])
                     # box with scale 0.5
-                    boxes.append([i, j,
-                                  self.scales[fm_idx]/2.,
-                                  self.scales[fm_idx]/2.])
+                    boxes_fm_i.append([i, j,
+                                       self.scales[fm_idx]/2.,
+                                       self.scales[fm_idx]/2.])
                     # box with aspect ratio
                     for ratio in self.ratios[fm_idx]:
-                        boxes.append([i, j,
-                                      self.scales[fm_idx] * np.sqrt(ratio),
-                                      self.scales[fm_idx] / np.sqrt(ratio)])
-        return tf.constant(boxes)
-
-    def train(self):
-        # todo
-        return self.getDefaultBoxes()
+                        boxes_fm_i.append([
+                            i, j,
+                            self.scales[fm_idx] * np.sqrt(ratio),
+                            self.scales[fm_idx] / np.sqrt(ratio)])
+            boxes.append(tf.constant((boxes_fm_i)))
+        return boxes
 
     def call(self, x):
         confs_per_stage = []
