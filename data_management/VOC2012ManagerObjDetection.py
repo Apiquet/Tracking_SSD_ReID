@@ -34,5 +34,6 @@ class VOC2012ManagerObjDetection():
             image = tf.keras.preprocessing.image.load_img(
                 self.images_path + img + ".jpg",
                 target_size=self.img_resolution)
-            images.append(tf.keras.preprocessing.image.img_to_array(image))
+            images.append(
+                tf.keras.preprocessing.image.img_to_array(image) / 255.)
         return tf.convert_to_tensor(images, dtype=tf.float32)

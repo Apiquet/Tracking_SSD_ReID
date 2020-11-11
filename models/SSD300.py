@@ -243,10 +243,10 @@ class SSD300():
         # loss calculation (pos+neg for conf, pos for loc)
         confs_idx = tf.math.logical_or(positives_idx, negatives_idx)
         confs_idx_rpt = tf.repeat(confs_idx, repeats=[10], axis=-1)
-
         confs_loss = self.after_mining_crossentropy(
             tf.reshape(confs_gt[confs_idx], [-1, confs_gt.shape[-1]]),
             tf.reshape(confs_pred[confs_idx_rpt], [-1, confs_pred.shape[-1]]))
+
         positives_idx_repeated = tf.repeat(confs_idx, repeats=[4], axis=-1)
         locs_loss = self.smooth_l1(locs_gt[positives_idx_repeated],
                                    locs_pred[positives_idx_repeated])
