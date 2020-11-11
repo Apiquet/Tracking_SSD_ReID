@@ -172,6 +172,17 @@ class SSD300():
         self.stage_10_boxes = self.default_boxes[4]
         self.stage_11_boxes = self.default_boxes[5]
 
+        '''
+            Loss utils
+        '''
+        self.before_mining_crossentropy =\
+            tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
+                                                          reduction='none')
+        self.after_mining_crossentropy =\
+            tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        self.smooth_l1 = tf.keras.losses.Huber(reduction='sum',
+                                               name='smooth_L1')
+
     def train(self):
         return None
 
@@ -215,7 +226,33 @@ class SSD300():
         loc = tf.reshape(loc, [loc.shape[0], number_of_boxes, 4])
         return conf, loc
 
-    def call(self, x):
+    def calculateLoss(self, confs_pred, confs_gt, locs_pred, locs_gt):
+        positives_idx = confs_gt > 0
+        positives_number = tf.reduce_sum(
+            tf.dtypes.cast(positives_idx, tf.uint8), axis=1)
+        confs_loss_before_mining = self.before_mining_crossentropy(confs_gt,
+                                                                   confs_pred)
+
+        # Negatives mining with <3:1 ratio for negatives:positives
+        negatives_number = positives_number * 3
+        negatives_rank = tf.argsort(confs_loss_before_mining, axis=1,
+                                    direction='DESCENDING')
+        rank_idx = tf.keras.backend.eval(negatives_rank)
+        negatives_idx = rank_idx <= negatives_number
+
+        # loss calculation (pos+neg for conf, pos for loc)
+        confs_idx = tf.math.logical_or(positives_idx, negatives_idx)
+        confs_loss = self.after_mining_crossentropy(confs_gt[confs_idx],
+                                                    confs_pred[confs_idx])
+        locs_loss = self.smooth_l1(locs_gt[positives_idx],
+                                   locs_pred[positives_idx])
+
+        confs_loss = confs_loss / positives_number
+        locs_loss = locs_loss / positives_number
+
+        return confs_loss, locs_loss
+
+    def __call__(self, x):
         confs_per_stage = []
         locs_per_stage = []
 
