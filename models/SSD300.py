@@ -218,8 +218,8 @@ class SSD300():
         boxes = []
         for fm_idx in range(len(self.fm_resolutions)):
             boxes_fm_i = []
-            for i in range(self.fm_resolutions[fm_idx]):
-                for j in range(self.fm_resolutions[fm_idx]):
+            for i in np.arange(0, 1, 1/self.fm_resolutions[fm_idx]):
+                for j in np.arange(0, 1, 1/self.fm_resolutions[fm_idx]):
                     # box with scale 0.5
                     boxes_fm_i.append([i, j,
                                        self.scales[fm_idx]/2.,
@@ -244,7 +244,7 @@ class SSD300():
                     to   [B, number of default boxes, number of classes]
         loc         from [B, W, H, N * 4]
                     to   [B, number of default boxes, 4]
-        
+
         Args:
             - (tf.Tensor) confidences of shape [B, W, H, N * number classes]
             - (tf.Tensor) loc of shape [B, W, H, N * 4]
@@ -263,7 +263,7 @@ class SSD300():
         """
         Method to calculate loss for confidences and localization offsets
         B = mini-batch size
-        
+
         Args:
             - (tf.Tensor) confidences prediction: [B, N boxes, n classes]
             - (tf.Tensor) confidence ground truth:  [B, N boxes, 1]
