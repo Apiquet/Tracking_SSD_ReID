@@ -138,7 +138,7 @@ class VOC2012ManagerObjDetection():
                         gt_locs = tf.Variable([0.0, 0.0, 0.0, 0.0])
                         if iou >= 0.5:
                             gt_conf = classes[i][j]
-                            gt_locs = self.getLocs(gt_box, def_box)
+                            gt_locs = self.getLocOffsets(gt_box, def_box)
                 gt_confs_per_stage.append(gt_conf)
             gt_confs.append(gt_confs_per_stage)
 
@@ -188,3 +188,18 @@ class VOC2012ManagerObjDetection():
             intersection
 
         return intersection/union
+
+    def getLocOffsets(self, box_gt: tf.Tensor, box_pred: tf.Tensor):
+        """
+        Method to get the offset from box_pred to box_gt on cx, cy, w, h
+
+        Args:
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [4]
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [4]
+
+        Return:
+            - (tf.Tensor) offset for the 4 parameters: cx, cy, w, h [4]
+        """
+
+        return box_gt[0] - box_pred[0], box_gt[1] - box_pred[2] \
+            box_gt[2] - box_pred[2], box_gt[3] - box_pred[3]
