@@ -44,7 +44,7 @@ class VOC2012ManagerObjDetection():
             - (list) images name without extension
 
         Return:
-            - (tf.Tensor) Tensor of shape:
+            - (tf.Tensor) Images of shape:
                 [number of images, self.img_resolution]
             - (list of tf.Tensor) Boxes of shape:
                 [number of images, number of objects, 4]
@@ -109,11 +109,12 @@ class VOC2012ManagerObjDetection():
         return tf.convert_to_tensor(boxes, dtype=tf.float16),\
             tf.convert_to_tensor(classes, dtype=tf.uint8)
 
-    def getImagesAndGt(self, image_name: str, resolution: tuple):
+    def getImagesAndGt(self, images_name: list, default_boxes: list):
         """
         Method to get the groud truth for confidence and localization
         S: number of stage
         D: number of default boxes
+        B: batch size (number of images)
 
         Args:
             - (list) images name without extension
@@ -121,9 +122,26 @@ class VOC2012ManagerObjDetection():
                 4 parameters: cx, cy, w, h
 
         Return:
-            - (tf.Tensor) confidence ground truth: [S, D, 1]
-            - (tf.Tensor) loc ground truth: [S, D, 4]
+            - (list of list of tf.Tensor) confs ground truth: [B, S, D, 1]
+            - (list of list of tf.Tensor) locs ground truth: [B, S, D, 4]
         """
+        images, boxes, classes = self.getRawData(image)
+        gt_confs = []
+        gt_locs = []
+        for i, boxes_per_img in enumerate(boxes):
+            gt_confs_per_stage = []
+            for s, boxes_per_stage in enumerate(default_boxes):
+                for idx, def_box in enumerate(boxes_per_stage):
+                    for j, gt_box in enumerate(boxes_per_img):
+                        iou = self.computeJaccardIdx(gt_box, def_box)
+                        gt_conf = 0
+                        gt_locs = tf.Variable([0.0, 0.0, 0.0, 0.0])
+                        if iou >= 0.5:
+                            gt_conf = classes[i][j]
+                            gt_locs = self.getLocs(gt_box, def_box)
+                gt_confs_per_stage.append(gt_conf)
+            gt_confs.append(gt_confs_per_stage)
+
         return 0
 
     def computeRectangleArea(self, xmin, ymin, xmax, ymax):
