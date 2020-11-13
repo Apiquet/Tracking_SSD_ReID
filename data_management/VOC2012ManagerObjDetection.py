@@ -14,15 +14,16 @@ import xml.etree.ElementTree as ET
 
 class VOC2012ManagerObjDetection():
 
-    def __init__(self, path):
+    def __init__(self, path, trainRatio=0.7, batch_size=32):
         super(VOC2012ManagerObjDetection, self).__init__()
         self.path = path
         self.img_resolution = (300, 300)
-        self.classes = {'aeroplane': 0, 'bicycle': 1, 'bird': 2, 'boat': 3,
-                        'bottle': 4, 'bus': 5, 'car': 6, 'cat': 7, 'chair': 8,
-                        'cow': 9, 'diningtable': 10, 'dog': 11, 'horse': 12,
-                        'motorbike': 13, 'person': 14, 'pottedplant': 15,
-                        'sheep': 16, 'sofa': 17, 'train': 18, 'tvmonitor': 19}
+        self.classes = {'undefined': 0,
+                        'aeroplane': 1, 'bicycle': 2, 'bird': 3, 'boat': 4,
+                        'bottle': 5, 'bus': 6, 'car': 7, 'cat': 8, 'chair': 9,
+                        'cow': 10, 'diningtable': 11, 'dog': 12, 'horse': 13,
+                        'motorbike': 14, 'person': 15, 'pottedplant': 16,
+                        'sheep': 17, 'sofa': 18, 'train': 19, 'tvmonitor': 20}
         self.images_path = path + "/JPEGImages/"
         self.annotations_path = path + "/Annotations/"
         self.images_name = [im.replace(".jpg", "")
@@ -30,6 +31,10 @@ class VOC2012ManagerObjDetection():
                             if os.path.isfile(os.path.join(self.images_path,
                                                            im))]
         self.number_samples = len(self.images_name)
+        self.train_samples = int(self.number_samples * trainRatio)
+        self.train_set = self.images_name[:self.train_samples]
+        self.val_set = self.images_name[self.train_samples:]
+        self.batches = np.array_split(self.train_set, batch_size)
 
     def getRawData(self, images_name: list):
         """
