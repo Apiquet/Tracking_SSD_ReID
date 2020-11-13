@@ -121,6 +121,9 @@ class VOC2012ManagerObjDetection():
         """
         return 0
 
+    def computeRectangleArea(self, xmin, ymin, xmax, ymax):
+        return (xmax - xmin) * (ymax - ymin)
+
     def computeJaccardIdx(self, box_1: tf.Tensor, box_2: tf.Tensor):
         """
         Method to get the Intersection-Over-Union between two boxes
@@ -132,4 +135,33 @@ class VOC2012ManagerObjDetection():
         Return:
             - (float) IoU value
         """
-        return 0
+        xmin_box_1 = box_1[0] - box_1[2]/2.
+        ymin_box_1 = box_1[1] - box_1[3]/2.
+        xmax_box_1 = box_1[0] + box_1[2]/2.
+        ymax_box_1 = box_1[1] + box_1[3]/2.
+
+        xmin_box_2 = box_2[0] - box_2[2]/2.
+        ymin_box_2 = box_2[1] - box_2[3]/2.
+        xmax_box_2 = box_2[0] + box_2[2]/2.
+        ymax_box_2 = box_2[1] + box_2[3]/2.
+
+        xmin_intersection = max(xmin_box_1, xmin_box_2)
+        ymin_intersection = max(ymin_box_1, ymin_box_2)
+        xmax_intersection = min(xmax_box_1, xmax_box_2)
+        ymax_intersection = min(ymax_box_1, ymax_box_2)
+
+        if xmin_intersection > xmax_intersection or\
+           ymin_intersection > ymax_intersection:
+            return 0.0
+        intersection = self.computeRectangleArea(xmin_intersection,
+                                                 ymin_intersection,
+                                                 xmax_intersection,
+                                                 ymax_intersection)
+
+        union = self.computeRectangleArea(xmin_box_1, ymin_box_1,
+                                          xmax_box_1, ymax_box_1) +\
+            self.computeRectangleArea(xmin_box_2, ymin_box_2,
+                                      xmax_box_2, ymax_box_2) -\
+            intersection
+
+        return intersection/union
