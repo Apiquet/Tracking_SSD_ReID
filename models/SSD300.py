@@ -214,6 +214,7 @@ class SSD300():
 
         Return:
             - (list of tf.Tensor) boxes per stage, 4 parameters cx, cy, w, h
+                [number of stage, number of default boxes, 4]
         """
         boxes = []
         for fm_idx in range(len(self.fm_resolutions)):

@@ -31,7 +31,7 @@ class VOC2012ManagerObjDetection():
                                                            im))]
         self.number_samples = len(self.images_name)
 
-    def getData(self, images_name: list):
+    def getRawData(self, images_name: list):
         """
         Method to get images and annotations from a list of images name
 
@@ -103,3 +103,33 @@ class VOC2012ManagerObjDetection():
 
         return tf.convert_to_tensor(boxes, dtype=tf.float16),\
             tf.convert_to_tensor(classes, dtype=tf.uint8)
+
+    def getImagesAndGt(self, image_name: str, resolution: tuple):
+        """
+        Method to get the groud truth for confidence and localization
+        S: number of stage
+        D: number of default boxes
+
+        Args:
+            - (list) images name without extension
+            - (list of tf.Tensor) default boxes per stage: [S, D, 4]
+                4 parameters: cx, cy, w, h
+
+        Return:
+            - (tf.Tensor) confidence ground truth: [S, D, 1]
+            - (tf.Tensor) loc ground truth: [S, D, 4]
+        """
+        return 0
+
+    def computeJaccardIdx(self, box_1: tf.Tensor, box_2: tf.Tensor):
+        """
+        Method to get the Intersection-Over-Union between two boxes
+
+        Args:
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [4]
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [4]
+
+        Return:
+            - (float) IoU value
+        """
+        return 0
