@@ -280,13 +280,13 @@ class VOC2012ManagerObjDetection():
         Return:
             - (tf.Tensor) offsets if iou_bin == 1, otherwise 0 [D, 4]
         """
-        offsets = tf.concat([gt_box[0] - default_boxes[:, 0],
-                             gt_box[1] - default_boxes[:, 1],
-                             gt_box[2] - default_boxes[:, 2],
-                             gt_box[3] - default_boxes[:, 3]], axis = 0)
+        gt_box = tf.expand_dims(gt_box, 0)
+        gt_box = tf.repeat(gt_box, repeats=[default_boxes.shape[0]], axis=0)
+        offsets = gt_box - default_boxes
+
         iou_bin = tf.expand_dims(iou_bin, 1)
         iou_bin = tf.repeat(iou_bin, repeats=[4], axis=1)
-        offsets = default_boxes * tf.dtypes.cast(iou_bin, tf.float16)
+        offsets = offsets * tf.dtypes.cast(iou_bin, tf.float16)
         return offsets
 
     def getImagesAndGtSpeedUp(self, images_name: list, default_boxes: list):
