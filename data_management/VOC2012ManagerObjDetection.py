@@ -278,7 +278,7 @@ class VOC2012ManagerObjDetection():
             - (tf.Tensor) default boxes with 4 parameters: cx, cy, w, h [D, 4]
 
         Return:
-            - (tf.Tensor) offset for the 4 parameters: cx, cy, w, h [4]
+            - (tf.Tensor) offsets if iou_bin == 1, otherwise 0 [D, 4]
         """
         offsets = tf.concat([gt_box[0] - default_boxes[:, 0],
                              gt_box[1] - default_boxes[:, 1],
