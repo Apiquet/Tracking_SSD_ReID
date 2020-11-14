@@ -223,25 +223,26 @@ class SSD300():
         boxes = []
         for fm_idx in range(len(self.fm_resolutions)):
             boxes_fm_i = []
-            for i in np.arange(0, 1, 1/self.fm_resolutions[fm_idx]):
-                for j in np.arange(0, 1, 1/self.fm_resolutions[fm_idx]):
+            step = 1/self.fm_resolutions[fm_idx]
+            for j in np.arange(0, 1, step):
+                for i in np.arange(0, 1, step):
                     # box with scale 0.5
-                    boxes_fm_i.append([i, j,
+                    boxes_fm_i.append([i + step/2, j + step/2,
                                        self.scales[fm_idx]/2.,
                                        self.scales[fm_idx]/2.])
-                    boxes.append([i, j,
+                    boxes.append([i + step/2, j + step/2,
                                   self.scales[fm_idx]/2.,
                                   self.scales[fm_idx]/2.])
                     # box with aspect ratio
                     for ratio in self.ratios[fm_idx]:
                         boxes_fm_i.append([
-                            i, j,
-                            self.scales[fm_idx] * np.sqrt(ratio),
-                            self.scales[fm_idx] / np.sqrt(ratio)])
+                            i + step/2, j + step/2,
+                            self.scales[fm_idx] / np.sqrt(ratio),
+                            self.scales[fm_idx] * np.sqrt(ratio)])
                         boxes.append([
-                            i, j,
-                            self.scales[fm_idx] * np.sqrt(ratio),
-                            self.scales[fm_idx] / np.sqrt(ratio)])
+                            i + step/2, j + step/2,
+                            self.scales[fm_idx] / np.sqrt(ratio),
+                            self.scales[fm_idx] * np.sqrt(ratio)])
 
             boxes_per_stage.append(tf.constant((boxes_fm_i)))
         return boxes_per_stage, tf.convert_to_tensor(boxes, dtype=tf.float16)
