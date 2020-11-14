@@ -312,14 +312,15 @@ class VOC2012ManagerObjDetection():
         gt_locs = []
         for i, gt_boxes_img in tqdm(enumerate(boxes)):
             gt_confs_per_image = tf.zeros([len(default_boxes)], tf.uint8)
-            gt_locs_per_image = tf.zeros([len(default_boxes)], tf.uint8)
+            gt_locs_per_image = tf.zeros([len(default_boxes), 4], tf.float16)
             for g, gt_box in enumerate(gt_boxes_img):
                 iou_bin = self.computeJaccardIdxSpeedUp(gt_box,
                                                         default_boxes,
                                                         0.5)
-                gt_conf = iou_bin * classes[i][g]
-                gt_loc = self.getLocOffsetsSpeedUp(gt_box, iou_bin,
-                                                   default_box)
+                gt_confs_per_image = gt_confs_per_image +\
+                    iou_bin * classes[i][g]
+                gt_locs_per_image = gt_locs_per_image +\
+                    self.getLocOffsetsSpeedUp(gt_box, iou_bin, default_boxes)
             gt_confs.append(gt_confs_per_image)
             gt_locs.append(gt_locs_per_image)
 
