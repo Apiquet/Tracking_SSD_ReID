@@ -227,7 +227,7 @@ class VOC2012ManagerObjDetection():
             - (float) iou threshold to use
 
         Return:
-            - (tf.Tensor) True if iou > threshold, False otherwise [D]
+            - (tf.Tensor) 0 if iou > threshold, 1 otherwise [D]
         """
         # convert to xmin, ymin, xmax, ymax
         default_boxes = tf.concat([
@@ -263,4 +263,43 @@ class VOC2012ManagerObjDetection():
         # compute iou
         iou = inter_area / (gt_box_width_height_area +
                             default_boxes_width_height_area - inter_area)
-        return iou > iou_threshold
+        return tf.dtypes.cast(iou > iou_threshold, tf.uint8)
+
+    def getImagesAndGtSpeedUp(self, images_name: list, default_boxes: list):
+        """
+        Method to get the groud truth for confidence and localization
+        S: number of stage
+        D: number of default boxes
+        B: batch size (number of images)
+
+        Args:
+            - (list) images name without extension
+            - (tf.Tensor) default boxes per stage: [D, 4]
+                4 parameters: cx, cy, w, h
+
+        Return:
+            - (tf.Tensor) Images of shape:
+                [number of images, self.img_resolution]
+            - (tf.Tensor) confs ground truth: [B, D]
+            - (tf.Tensor) locs ground truth: [B, D, 4]
+        """
+        images, boxes, classes = self.getRawData(images_name)
+        gt_confs = []
+        gt_locs = []
+        for i, gt_boxes_img in tqdm(enumerate(boxes)):
+            gt_confs_per_image = tf.zeros([len(default_boxes)], tf.uint8)
+            gt_locs_per_image = tf.zeros([len(default_boxes)], tf.uint8)
+            for g, gt_box in enumerate(gt_boxes_img):
+                iou_bin = self.computeJaccardIdxSpeedUp(gt_box,
+                                                        default_boxes,
+                                                        0.5)
+                gt_conf = iou_bin * classes[i][g]
+                gt_loc = tf.Variable([0.0, 0.0, 0.0, 0.0])
+                gt_loc = self.getLocOffsetsSpeedUp(gt_box, iou_bin,
+                                                   default_box)
+            gt_confs.append(gt_confs_per_image)
+            gt_locs.append(gt_locs_per_image)
+
+        return images,\
+            tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
+            tf.convert_to_tensor(gt_locs, dtype=tf.float16)
