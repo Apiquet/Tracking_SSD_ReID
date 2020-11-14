@@ -147,9 +147,9 @@ class VOC2012ManagerObjDetection():
             gt_confs.append(gt_confs_per_default_box)
             gt_locs.append(gt_locs_per_default_box)
 
-        return images,
-               tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
-               tf.convert_to_tensor(gt_locs, dtype=tf.float16)
+        return images,\
+            tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
+            tf.convert_to_tensor(gt_locs, dtype=tf.float16)
 
     def computeRectangleArea(self, xmin, ymin, xmax, ymax):
         return (xmax - xmin) * (ymax - ymin)
@@ -212,3 +212,55 @@ class VOC2012ManagerObjDetection():
                             box_gt[1] - box_pred[1],
                             box_gt[2] - box_pred[2],
                             box_gt[3] - box_pred[3]])
+
+    def computeJaccardIdxSpeedUp(self, gt_box: tf.Tensor,
+                                 default_boxes: tf.Tensor,
+                                 iou_threshold: float):
+        """
+        Method to get the boolean tensor where iou is superior to
+        the specified threshold between the gt box and the default one
+        D: number of default boxes
+
+        Args:
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [4]
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [D, 4]
+            - (float) iou threshold to use
+
+        Return:
+            - (tf.Tensor) True if iou > threshold, False otherwise [D]
+        """
+        # convert to xmin, ymin, xmax, ymax
+        default_boxes = tf.concat([
+            default_boxes[:, :2] - default_boxes[:, 2:] / 2,
+            default_boxes[:, :2] + default_boxes[:, 2:] / 2], axis= -1)
+        gt_box = tf.concat([gt_box[:2] - gt_box[2:] / 2,
+                            gt_box[:2] + gt_box[2:] / 2], axis= -1)
+        gt_box = tf.expand_dims(gt_box, 0)
+        gt_box = tf.repeat(gt_box, repeats=[default_boxes.shape[0]], axis=0)
+
+        # compute intersection
+        inter_xymin = tf.math.maximum(default_boxes[:, :2],
+                                          gt_box[:, :2])
+        inter_xymax = tf.math.minimum(default_boxes[:, 2:],
+                                          gt_box[:, 2:])
+        inter_width_height = tf.clip_by_value(inter_xymax - inter_xymin,
+                                              0.0, 300.0)
+        inter_area = inter_width_height[:, 0] * inter_width_height[:, 1]
+
+        # compute area of the boxes
+        gt_box_width_height =\
+            tf.clip_by_value(gt_box[:, 2:] - gt_box[:, :2],
+                             0.0, 300.0)
+        gt_box_width_height_area = gt_box_width_height[:, 0] *\
+                                   gt_box_width_height[:, 1]
+
+        default_boxes_width_height =\
+            tf.clip_by_value(default_boxes[:, 2:] - default_boxes[:, :2],
+                             0.0, 300.0)
+        default_boxes_width_height_area = default_boxes_width_height[:, 0] *\
+                                          default_boxes_width_height[:, 1]
+
+        # compute iou
+        iou = inter_area / (gt_box_width_height_area +
+                            default_boxes_width_height_area - inter_area)
+        return iou > iou_threshold
