@@ -265,6 +265,30 @@ class VOC2012ManagerObjDetection():
                             default_boxes_width_height_area - inter_area)
         return tf.dtypes.cast(iou > iou_threshold, tf.uint8)
 
+    def getLocOffsetsSpeedUp(self, gt_box: tf.Tensor, iou_bin: tf.Tensor,
+                             default_boxes: tf.Tensor):
+        """
+        Method to get the offset from default boxes to box_gt on cx, cy, w, h
+        where iou_idx is 1
+        D: number of default boxes
+
+        Args:
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [4]
+            - (tf.Tensor) 1 if iou > threshold, 0 otherwise [D]
+            - (tf.Tensor) default boxes with 4 parameters: cx, cy, w, h [D, 4]
+
+        Return:
+            - (tf.Tensor) offset for the 4 parameters: cx, cy, w, h [4]
+        """
+        offsets = tf.concat([gt_box[0] - default_boxes[:, 0],
+                             gt_box[1] - default_boxes[:, 1],
+                             gt_box[2] - default_boxes[:, 2],
+                             gt_box[3] - default_boxes[:, 3]], axis = 0)
+        iou_bin = tf.expand_dims(iou_bin, 1)
+        iou_bin = tf.repeat(iou_bin, repeats=[4], axis=1)
+        offsets = default_boxes * tf.dtypes.cast(iou_bin, tf.float16)
+        return offsets
+
     def getImagesAndGtSpeedUp(self, images_name: list, default_boxes: list):
         """
         Method to get the groud truth for confidence and localization
@@ -294,7 +318,6 @@ class VOC2012ManagerObjDetection():
                                                         default_boxes,
                                                         0.5)
                 gt_conf = iou_bin * classes[i][g]
-                gt_loc = tf.Variable([0.0, 0.0, 0.0, 0.0])
                 gt_loc = self.getLocOffsetsSpeedUp(gt_box, iou_bin,
                                                    default_box)
             gt_confs.append(gt_confs_per_image)
