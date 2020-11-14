@@ -119,12 +119,14 @@ class VOC2012ManagerObjDetection():
 
         Args:
             - (list) images name without extension
-            - (list of tf.Tensor) default boxes per stage: [D, 4]
+            - (tf.Tensor) default boxes per stage: [D, 4]
                 4 parameters: cx, cy, w, h
 
         Return:
-            - (list of list of tf.Tensor) confs ground truth: [B, D, 1]
-            - (list of list of tf.Tensor) locs ground truth: [B, D, 4]
+            - (tf.Tensor) Images of shape:
+                [number of images, self.img_resolution]
+            - (tf.Tensor) confs ground truth: [B, D, 1]
+            - (tf.Tensor) locs ground truth: [B, D, 4]
         """
         images, boxes, classes = self.getRawData(images_name)
         gt_confs = []
@@ -145,7 +147,8 @@ class VOC2012ManagerObjDetection():
             gt_confs.append(gt_confs_per_default_box)
             gt_locs.append(gt_locs_per_default_box)
 
-        return tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
+        return images,
+               tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
                tf.convert_to_tensor(gt_locs, dtype=tf.float16)
 
     def computeRectangleArea(self, xmin, ymin, xmax, ymax):
