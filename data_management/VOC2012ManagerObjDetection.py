@@ -50,7 +50,7 @@ class VOC2012ManagerObjDetection():
             - (list of tf.Tensor) Boxes of shape:
                 [number of images, number of objects, 4]
             - (list tf.Tensor) Classes of shape:
-                [number of images, number of objects, 1]
+                [number of images, number of objects]
         """
         images = []
         boxes = []
@@ -80,7 +80,7 @@ class VOC2012ManagerObjDetection():
 
         Return:
             - (tf.Tensor) Boxes of shape: [number of objects, 4]
-            - (tf.Tensor) Classes of shape: [number of objects, 1]
+            - (tf.Tensor) Classes of shape: [number of objects]
         """
         boxes = []
         classes = []
@@ -125,7 +125,7 @@ class VOC2012ManagerObjDetection():
         Return:
             - (tf.Tensor) Images of shape:
                 [number of images, self.img_resolution]
-            - (tf.Tensor) confs ground truth: [B, D, 1]
+            - (tf.Tensor) confs ground truth: [B, D]
             - (tf.Tensor) locs ground truth: [B, D, 4]
         """
         images, boxes, classes = self.getRawData(images_name)
