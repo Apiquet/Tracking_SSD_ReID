@@ -32,9 +32,10 @@ class VOC2012ManagerObjDetection():
                                                            im))]
         self.number_samples = len(self.images_name)
         self.train_samples = int(self.number_samples * trainRatio)
-        self.train_set = self.images_name[:self.train_samples]
+        self.train_set = self.images_name[:self.train_samples - self.train_samples%batch_size]
         self.val_set = self.images_name[self.train_samples:]
-        self.batches = np.array_split(self.train_set, batch_size)
+        self.batches = [self.train_set[i:i + batch_size]
+                        for i in range(0, len(self.train_set), batch_size)]
 
     def getRawData(self, images_name: list):
         """
@@ -118,31 +119,34 @@ class VOC2012ManagerObjDetection():
 
         Args:
             - (list) images name without extension
-            - (list of tf.Tensor) default boxes per stage: [S, D, 4]
+            - (list of tf.Tensor) default boxes per stage: [D, 4]
                 4 parameters: cx, cy, w, h
 
         Return:
-            - (list of list of tf.Tensor) confs ground truth: [B, S, D, 1]
-            - (list of list of tf.Tensor) locs ground truth: [B, S, D, 4]
+            - (list of list of tf.Tensor) confs ground truth: [B, D, 1]
+            - (list of list of tf.Tensor) locs ground truth: [B, D, 4]
         """
-        images, boxes, classes = self.getRawData(image)
+        images, boxes, classes = self.getRawData(images_name)
         gt_confs = []
         gt_locs = []
-        for i, boxes_per_img in enumerate(boxes):
-            gt_confs_per_stage = []
-            for s, boxes_per_stage in enumerate(default_boxes):
-                for idx, def_box in enumerate(boxes_per_stage):
-                    for j, gt_box in enumerate(boxes_per_img):
-                        iou = self.computeJaccardIdx(gt_box, def_box)
-                        gt_conf = 0
-                        gt_locs = tf.Variable([0.0, 0.0, 0.0, 0.0])
-                        if iou >= 0.5:
-                            gt_conf = classes[i][j]
-                            gt_locs = self.getLocOffsets(gt_box, def_box)
-                gt_confs_per_stage.append(gt_conf)
-            gt_confs.append(gt_confs_per_stage)
+        for i, gt_boxes_img in tqdm(enumerate(boxes)):
+            gt_confs_per_default_box = []
+            gt_locs_per_default_box = []
+            for d, default_box in enumerate(default_boxes):
+                for g, gt_box in enumerate(gt_boxes_img):
+                    iou = self.computeJaccardIdx(gt_box, default_box)
+                    gt_conf = self.classes['undefined']
+                    gt_loc = tf.Variable([0.0, 0.0, 0.0, 0.0])
+                    if iou >= 0.5:
+                        gt_conf = tf.Variable(classes[i][g])
+                        gt_loc = self.getLocOffsets(gt_box, default_box)
+                gt_confs_per_default_box.append(gt_conf)
+                gt_locs_per_default_box.append(gt_loc)
+            gt_confs.append(gt_confs_per_default_box)
+            gt_locs.append(gt_locs_per_default_box)
 
-        return 0
+        return tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
+               tf.convert_to_tensor(gt_locs, dtype=tf.float16)
 
     def computeRectangleArea(self, xmin, ymin, xmax, ymax):
         return (xmax - xmin) * (ymax - ymin)
@@ -201,5 +205,7 @@ class VOC2012ManagerObjDetection():
             - (tf.Tensor) offset for the 4 parameters: cx, cy, w, h [4]
         """
 
-        return box_gt[0] - box_pred[0], box_gt[1] - box_pred[2] \
-            box_gt[2] - box_pred[2], box_gt[3] - box_pred[3]
+        return tf.Variable([box_gt[0] - box_pred[0],
+                            box_gt[1] - box_pred[1],
+                            box_gt[2] - box_pred[2],
+                            box_gt[3] - box_pred[3]])
