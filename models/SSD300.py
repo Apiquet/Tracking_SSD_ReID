@@ -164,13 +164,14 @@ class SSD300():
         self.scales = [0.1, 0.2, 0.375, 0.55, 0.725, 0.9]
         self.fm_resolutions = [38, 19, 10, 5, 3, 1]
 
-        self.default_boxes = self.getDefaultBoxes()
-        self.stage_4_boxes = self.default_boxes[0]
-        self.stage_7_boxes = self.default_boxes[1]
-        self.stage_8_boxes = self.default_boxes[2]
-        self.stage_9_boxes = self.default_boxes[3]
-        self.stage_10_boxes = self.default_boxes[4]
-        self.stage_11_boxes = self.default_boxes[5]
+        self.default_boxes_per_stage, self.default_boxes = \
+            self.getDefaultBoxes()
+        self.stage_4_boxes = self.default_boxes_per_stage[0]
+        self.stage_7_boxes = self.default_boxes_per_stage[1]
+        self.stage_8_boxes = self.default_boxes_per_stage[2]
+        self.stage_9_boxes = self.default_boxes_per_stage[3]
+        self.stage_10_boxes = self.default_boxes_per_stage[4]
+        self.stage_11_boxes = self.default_boxes_per_stage[5]
 
         '''
             Loss utils
@@ -214,8 +215,11 @@ class SSD300():
 
         Return:
             - (list of tf.Tensor) boxes per stage, 4 parameters cx, cy, w, h
-                [number of stage, number of default boxes, 4]
+                [number of stage, number of default boxes per stage, 4]
+            - (list of tf.Tensor) boxes, 4 parameters cx, cy, w, h
+                [number of default boxes, 4]
         """
+        boxes_per_stage = []
         boxes = []
         for fm_idx in range(len(self.fm_resolutions)):
             boxes_fm_i = []
@@ -225,14 +229,22 @@ class SSD300():
                     boxes_fm_i.append([i, j,
                                        self.scales[fm_idx]/2.,
                                        self.scales[fm_idx]/2.])
+                    boxes.append([i, j,
+                                  self.scales[fm_idx]/2.,
+                                  self.scales[fm_idx]/2.])
                     # box with aspect ratio
                     for ratio in self.ratios[fm_idx]:
                         boxes_fm_i.append([
                             i, j,
                             self.scales[fm_idx] * np.sqrt(ratio),
                             self.scales[fm_idx] / np.sqrt(ratio)])
-            boxes.append(tf.constant((boxes_fm_i)))
-        return boxes
+                        boxes.append([
+                            i, j,
+                            self.scales[fm_idx] * np.sqrt(ratio),
+                            self.scales[fm_idx] / np.sqrt(ratio)])
+
+            boxes_per_stage.append(tf.constant((boxes_fm_i)))
+        return boxes_per_stage, tf.constant(boxes)
 
     def reshapeConfLoc(self, conf, loc, number_of_boxes):
         """
