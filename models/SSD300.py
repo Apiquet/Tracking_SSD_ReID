@@ -244,7 +244,7 @@ class SSD300():
                             self.scales[fm_idx] / np.sqrt(ratio)])
 
             boxes_per_stage.append(tf.constant((boxes_fm_i)))
-        return boxes_per_stage, tf.constant(boxes)
+        return boxes_per_stage, tf.convert_to_tensor(boxes, dtype=tf.float16)
 
     def reshapeConfLoc(self, conf, loc, number_of_boxes):
         """
