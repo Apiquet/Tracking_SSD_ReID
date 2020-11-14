@@ -263,7 +263,7 @@ class VOC2012ManagerObjDetection():
         # compute iou
         iou = inter_area / (gt_box_width_height_area +
                             default_boxes_width_height_area - inter_area)
-        return tf.dtypes.cast(iou > iou_threshold, tf.uint8)
+        return tf.dtypes.cast(iou >= iou_threshold, tf.uint8)
 
     def getLocOffsetsSpeedUp(self, gt_box: tf.Tensor, iou_bin: tf.Tensor,
                              default_boxes: tf.Tensor):
