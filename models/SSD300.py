@@ -317,6 +317,25 @@ class SSD300():
 
         return confs_loss, locs_loss
 
+    def nms(self, boxes_pred, scores):
+        """
+        Method to filter boxes with score < 0.01
+        Return maximum 200 boxes per image
+        B = mini-batch size
+
+        Args:
+            - (tf.Tensor) boxes predicted: [B, N boxes, 4]
+            - (tf.Tensor) scores for each box:  [B, N boxes]
+
+        Return:
+            - (tf.Tensor) bool, False if box must be removed: [B, N boxes]
+        """
+        bool_tensor = tf.dtypes.cast(scores > 0.01, tf.uint8) * scores
+        rank = tf.argsort(bool_tensor, axis=1, direction='DESCENDING')
+        rank_idx = tf.keras.backend.eval(rank)
+        bool_tensor = rank_idx <= 200
+        return bool_tensor
+
     def __call__(self, x):
         confs_per_stage = []
         locs_per_stage = []
@@ -375,12 +394,5 @@ class SSD300():
                                         self.stage_11_boxes.shape[0])
         confs_per_stage.append(conf)
         locs_per_stage.append(loc)
-
-        fake_conf_gt = tf.random.uniform(shape=[confs_per_stage[0].shape[0],
-                                                confs_per_stage[0].shape[1],
-                                                1],
-                                         minval=0, maxval=9, dtype=tf.int32)
-        self.calculateLoss(confs_per_stage[0], fake_conf_gt,
-                           locs_per_stage[0], locs_per_stage[0])
 
         return confs_per_stage, locs_per_stage
