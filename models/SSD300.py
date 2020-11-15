@@ -351,7 +351,8 @@ class SSD300(tf.keras.Model):
         return bool_tensor
 
     def getPredictionsFromConfsLocs(self, confs_pred, locs_pred,
-                                    score_threshold=0.2):
+                                    score_threshold=0.2,
+                                    box_encoding="center"):
         """
         Method to convert output offsets to boxes
         and scores to maximum class number
@@ -360,6 +361,9 @@ class SSD300(tf.keras.Model):
         Args:
             - (tf.Tensor) scores for each box:  [B, N boxes, N classes]
             - (tf.Tensor) offsets for each box:  [B, N boxes, 4]
+            - Optional: score threshold on confs_pred to accept prediction
+            - Optional: box encoding: center: cx, cy, w, h;
+                                      corner: xmin, ymin, xmax, ymax
 
         Return:
             - (tf.Tensor) Predicted class: [B, N boxes]
@@ -379,6 +383,10 @@ class SSD300(tf.keras.Model):
             idx_to_keep = tf.expand_dims(idx_to_keep, 1)
             idx_to_keep = tf.repeat(idx_to_keep, repeats=[4], axis=-1)
             boxes = tf.reshape(boxes[idx_to_keep], [-1, 4])
+            if box_encoding == "corner":
+                boxes = tf.concat([boxes[:, :2] - boxes[:, 2:] / 2,
+                                   boxes[:, :2] + boxes[:, 2:] / 2],
+                                  axis=-1)
             boxes_per_img.append(boxes)
         return classes_per_img, boxes_per_img
 
