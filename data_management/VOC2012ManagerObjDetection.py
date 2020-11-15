@@ -8,7 +8,6 @@ Pascal VOC2012 dataset manager
 import numpy as np
 import os
 import tensorflow as tf
-from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
 
@@ -56,7 +55,7 @@ class VOC2012ManagerObjDetection():
         images = []
         boxes = []
         classes = []
-        for img in tqdm(images_name):
+        for img in images_name:
             image = tf.keras.preprocessing.image.load_img(
                 self.images_path + img + ".jpg")
             w, h = image.size[0], image.size[1]
@@ -69,7 +68,7 @@ class VOC2012ManagerObjDetection():
             boxes_img_i, classes_img_i = self.getAnnotations(img, (w, h))
             boxes.append(boxes_img_i)
             classes.append(classes_img_i)
-        return tf.convert_to_tensor(images, dtype=tf.float16), boxes, classes
+        return tf.convert_to_tensor(images, dtype=tf.float32), boxes, classes
 
     def getAnnotations(self, image_name: str, resolution: tuple):
         """
@@ -108,7 +107,7 @@ class VOC2012ManagerObjDetection():
             name = obj.find('name').text.lower().strip()
             classes.append(self.classes[name])
 
-        return tf.convert_to_tensor(boxes, dtype=tf.float16),\
+        return tf.convert_to_tensor(boxes, dtype=tf.float32),\
             tf.convert_to_tensor(classes, dtype=tf.uint8)
 
     def getImagesAndGt(self, images_name: list, default_boxes: list):
@@ -132,7 +131,7 @@ class VOC2012ManagerObjDetection():
         images, boxes, classes = self.getRawData(images_name)
         gt_confs = []
         gt_locs = []
-        for i, gt_boxes_img in tqdm(enumerate(boxes)):
+        for i, gt_boxes_img in enumerate(boxes):
             gt_confs_per_default_box = []
             gt_locs_per_default_box = []
             for d, default_box in enumerate(default_boxes):
@@ -150,7 +149,7 @@ class VOC2012ManagerObjDetection():
 
         return images,\
             tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
-            tf.convert_to_tensor(gt_locs, dtype=tf.float16)
+            tf.convert_to_tensor(gt_locs, dtype=tf.float32)
 
     def computeRectangleArea(self, xmin, ymin, xmax, ymax):
         return (xmax - xmin) * (ymax - ymin)
@@ -287,7 +286,7 @@ class VOC2012ManagerObjDetection():
 
         iou_bin = tf.expand_dims(iou_bin, 1)
         iou_bin = tf.repeat(iou_bin, repeats=[4], axis=1)
-        offsets = offsets * tf.dtypes.cast(iou_bin, tf.float16)
+        offsets = offsets * tf.dtypes.cast(iou_bin, tf.float32)
         return offsets
 
     def getImagesAndGtSpeedUp(self, images_name: list, default_boxes: list):
@@ -311,9 +310,9 @@ class VOC2012ManagerObjDetection():
         images, boxes, classes = self.getRawData(images_name)
         gt_confs = []
         gt_locs = []
-        for i, gt_boxes_img in tqdm(enumerate(boxes)):
+        for i, gt_boxes_img in enumerate(boxes):
             gt_confs_per_image = tf.zeros([len(default_boxes)], tf.uint8)
-            gt_locs_per_image = tf.zeros([len(default_boxes), 4], tf.float16)
+            gt_locs_per_image = tf.zeros([len(default_boxes), 4], tf.float32)
             for g, gt_box in enumerate(gt_boxes_img):
                 iou_bin = self.computeJaccardIdxSpeedUp(gt_box,
                                                         default_boxes,
@@ -327,4 +326,4 @@ class VOC2012ManagerObjDetection():
 
         return images,\
             tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
-            tf.convert_to_tensor(gt_locs, dtype=tf.float16)
+            tf.convert_to_tensor(gt_locs, dtype=tf.float32)

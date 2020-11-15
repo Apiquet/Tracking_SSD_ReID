@@ -245,7 +245,7 @@ class SSD300(tf.keras.Model):
                             self.scales[fm_idx] * np.sqrt(ratio)])
 
             boxes_per_stage.append(tf.constant((boxes_fm_i)))
-        return boxes_per_stage, tf.convert_to_tensor(boxes, dtype=tf.float16)
+        return boxes_per_stage, tf.convert_to_tensor(boxes, dtype=tf.float32)
 
     def reshapeConfLoc(self, conf, loc, number_of_boxes):
         """
@@ -303,7 +303,7 @@ class SSD300(tf.keras.Model):
 
         # loss calculation (pos+neg for conf, pos for loc)
         confs_idx = tf.math.logical_or(positives_idx, negatives_idx)
-        confs_idx_rpt = tf.repeat(confs_idx, repeats=[10], axis=-1)
+        confs_idx_rpt = tf.repeat(confs_idx, repeats=[self.num_categories], axis=-1)
         confs_loss = self.after_mining_crossentropy(
             tf.reshape(confs_gt[confs_idx], [-1, confs_gt.shape[-1]]),
             tf.reshape(confs_pred[confs_idx_rpt], [-1, confs_pred.shape[-1]]))
