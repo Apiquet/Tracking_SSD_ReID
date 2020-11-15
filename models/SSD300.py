@@ -211,10 +211,12 @@ class SSD300(tf.keras.Model):
         for i in range(len(self.VGG16_stage_4.layers)):
             self.VGG16_stage_4.get_layer(index=i).set_weights(
                 vgg16_original.get_layer(index=i+1).get_weights())
+            self.VGG16_stage_4.get_layer(index=i).trainable = False
 
         for j in range(len(self.VGG16_stage_5.layers)):
             self.VGG16_stage_5.get_layer(index=j).set_weights(
                 vgg16_original.get_layer(index=i+j+2).get_weights())
+            self.VGG16_stage_5.get_layer(index=j).trainable = False
 
     def getDefaultBoxes(self):
         """
