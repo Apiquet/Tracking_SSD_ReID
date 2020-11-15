@@ -9,7 +9,7 @@ from tensorflow import keras
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
 
 
-class VGG16():
+class VGG16(keras.Model):
 
     def __init__(self, input_shape=(224, 224, 3)):
         super(VGG16, self).__init__()

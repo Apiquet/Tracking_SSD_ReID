@@ -12,7 +12,7 @@ from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
 from .VGG16 import VGG16
 
 
-class SSD300():
+class SSD300(tf.keras.Model):
 
     def __init__(self, num_categories=10):
         super(SSD300, self).__init__()
@@ -336,7 +336,7 @@ class SSD300():
         bool_tensor = rank_idx <= 200
         return bool_tensor
 
-    def __call__(self, x):
+    def call(self, x):
         confs_per_stage = []
         locs_per_stage = []
 
