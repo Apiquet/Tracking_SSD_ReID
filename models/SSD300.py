@@ -350,6 +350,38 @@ class SSD300(tf.keras.Model):
         bool_tensor = rank_idx <= 200
         return bool_tensor
 
+    def getPredictionsFromConfsLocs(self, confs_pred, locs_pred,
+                                    score_threshold=0.2):
+        """
+        Method to convert output offsets to boxes
+        and scores to maximum class number
+        Return boxes with score superior to score_threshold
+
+        Args:
+            - (tf.Tensor) scores for each box:  [B, N boxes, N classes]
+            - (tf.Tensor) offsets for each box:  [B, N boxes, 4]
+
+        Return:
+            - (tf.Tensor) Predicted class: [B, N boxes]
+            - (tf.Tensor) Predicted boxes (cx, cy, w, h): [B, N boxes, 4]
+        """
+        boxes_per_img = []
+        classes_per_img = []
+        for i in range(len(confs_pred)):
+            boxes = self.default_boxes + locs_pred[i]
+
+            idx_to_keep = tf.reduce_max(confs_pred[i], axis=1)\
+                >= score_threshold
+            classes = confs_pred[i][idx_to_keep]
+            classes = tf.argmax(classes, axis=1)
+            classes_per_img.append(classes)
+
+            idx_to_keep = tf.expand_dims(idx_to_keep, 1)
+            idx_to_keep = tf.repeat(idx_to_keep, repeats=[4], axis=-1)
+            boxes = tf.reshape(boxes[idx_to_keep], [-1, 4])
+            boxes_per_img.append(boxes)
+        return classes_per_img, boxes_per_img
+
     def call(self, x):
         confs_per_stage = []
         locs_per_stage = []
