@@ -7,6 +7,7 @@ SSD300 implementation: https://arxiv.org/abs/1512.02325
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.applications import VGG16 as VGG16_original
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten
 
 from .VGG16 import VGG16
@@ -188,9 +189,7 @@ class SSD300(tf.keras.Model):
         return None
 
     def getCone(self):
-        """
-        Method to get the cone of the SSD architecture
-        """
+        """ Method to get the cone of the SSD architecture """
         return tf.keras.models.Sequential([
             self.VGG16_stage_4,
             self.VGG16_stage_5,
@@ -204,6 +203,20 @@ class SSD300(tf.keras.Model):
             self.stage_10_2_256,
             self.stage_11_1_128,
             self.stage_11_2_256])
+
+    def load_vgg16_imagenet_weights(self):
+        """ Use pretrained weights from imagenet """
+        vgg16_original = VGG16_original(weights='imagenet')
+        for i in range(len(self.VGG16_stage_4.layers)):
+            self.VGG16_stage_4.get_layer(index=i).set_weights(
+                origin_vgg.get_layer(index=i+1).get_weights())
+
+        self.VGG16_stage_5.get_layer(index=0).set_weights(
+            origin_vgg.get_layer(index=i+2).get_weights())
+        self.VGG16_stage_5.get_layer(index=1).set_weights(
+            origin_vgg.get_layer(index=i+3).get_weights())
+        self.VGG16_stage_5.get_layer(index=2).set_weights(
+            origin_vgg.get_layer(index=i+4).get_weights())
 
     def getDefaultBoxes(self):
         """
@@ -303,7 +316,8 @@ class SSD300(tf.keras.Model):
 
         # loss calculation (pos+neg for conf, pos for loc)
         confs_idx = tf.math.logical_or(positives_idx, negatives_idx)
-        confs_idx_rpt = tf.repeat(confs_idx, repeats=[self.num_categories], axis=-1)
+        confs_idx_rpt = tf.repeat(confs_idx, repeats=[self.num_categories],
+                                  axis=-1)
         confs_loss = self.after_mining_crossentropy(
             tf.reshape(confs_gt[confs_idx], [-1, confs_gt.shape[-1]]),
             tf.reshape(confs_pred[confs_idx_rpt], [-1, confs_pred.shape[-1]]))
