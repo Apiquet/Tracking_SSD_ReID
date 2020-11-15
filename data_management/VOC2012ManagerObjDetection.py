@@ -108,7 +108,7 @@ class VOC2012ManagerObjDetection():
             classes.append(self.classes[name])
 
         return tf.convert_to_tensor(boxes, dtype=tf.float32),\
-            tf.convert_to_tensor(classes, dtype=tf.uint8)
+            tf.convert_to_tensor(classes, dtype=tf.int16)
 
     def getImagesAndGt(self, images_name: list, default_boxes: list):
         """
@@ -148,7 +148,7 @@ class VOC2012ManagerObjDetection():
             gt_locs.append(gt_locs_per_default_box)
 
         return images,\
-            tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
+            tf.convert_to_tensor(gt_confs, dtype=tf.int16),\
             tf.convert_to_tensor(gt_locs, dtype=tf.float32)
 
     def computeRectangleArea(self, xmin, ymin, xmax, ymax):
@@ -263,7 +263,7 @@ class VOC2012ManagerObjDetection():
         # compute iou
         iou = inter_area / (gt_box_width_height_area +
                             default_boxes_width_height_area - inter_area)
-        return tf.dtypes.cast(iou >= iou_threshold, tf.uint8)
+        return tf.dtypes.cast(iou >= iou_threshold, tf.int16)
 
     def getLocOffsetsSpeedUp(self, gt_box: tf.Tensor, iou_bin: tf.Tensor,
                              default_boxes: tf.Tensor):
@@ -311,12 +311,16 @@ class VOC2012ManagerObjDetection():
         gt_confs = []
         gt_locs = []
         for i, gt_boxes_img in enumerate(boxes):
-            gt_confs_per_image = tf.zeros([len(default_boxes)], tf.uint8)
+            gt_confs_per_image = tf.zeros([len(default_boxes)], tf.int16)
             gt_locs_per_image = tf.zeros([len(default_boxes), 4], tf.float32)
+            iou_bin_masks = []
             for g, gt_box in enumerate(gt_boxes_img):
                 iou_bin = self.computeJaccardIdxSpeedUp(gt_box,
                                                         default_boxes,
                                                         0.5)
+                for mask in iou_bin_masks:
+                    iou_bin = tf.clip_by_value(iou_bin - mask, 0, 1)
+                iou_bin_masks.append(iou_bin)
                 gt_confs_per_image = gt_confs_per_image +\
                     iou_bin * classes[i][g]
                 gt_locs_per_image = gt_locs_per_image +\
@@ -325,5 +329,5 @@ class VOC2012ManagerObjDetection():
             gt_locs.append(gt_locs_per_image)
 
         return images,\
-            tf.convert_to_tensor(gt_confs, dtype=tf.uint8),\
+            tf.convert_to_tensor(gt_confs, dtype=tf.int16),\
             tf.convert_to_tensor(gt_locs, dtype=tf.float32)

@@ -344,7 +344,7 @@ class SSD300(tf.keras.Model):
         Return:
             - (tf.Tensor) bool, False if box must be removed: [B, N boxes]
         """
-        bool_tensor = tf.dtypes.cast(scores > 0.01, tf.uint8) * scores
+        bool_tensor = tf.dtypes.cast(scores > 0.01, tf.int16) * scores
         rank = tf.argsort(bool_tensor, axis=1, direction='DESCENDING')
         rank_idx = tf.keras.backend.eval(rank)
         bool_tensor = rank_idx <= 200
