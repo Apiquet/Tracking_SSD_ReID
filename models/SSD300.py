@@ -207,16 +207,14 @@ class SSD300(tf.keras.Model):
     def load_vgg16_imagenet_weights(self):
         """ Use pretrained weights from imagenet """
         vgg16_original = VGG16_original(weights='imagenet')
+
         for i in range(len(self.VGG16_stage_4.layers)):
             self.VGG16_stage_4.get_layer(index=i).set_weights(
-                origin_vgg.get_layer(index=i+1).get_weights())
+                vgg16_original.get_layer(index=i+1).get_weights())
 
-        self.VGG16_stage_5.get_layer(index=0).set_weights(
-            origin_vgg.get_layer(index=i+2).get_weights())
-        self.VGG16_stage_5.get_layer(index=1).set_weights(
-            origin_vgg.get_layer(index=i+3).get_weights())
-        self.VGG16_stage_5.get_layer(index=2).set_weights(
-            origin_vgg.get_layer(index=i+4).get_weights())
+        for j in range(len(self.VGG16_stage_5.layers)):
+            self.VGG16_stage_5.get_layer(index=j).set_weights(
+                vgg16_original.get_layer(index=i+j+2).get_weights())
 
     def getDefaultBoxes(self):
         """
