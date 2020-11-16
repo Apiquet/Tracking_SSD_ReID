@@ -181,7 +181,8 @@ class SSD300(tf.keras.Model):
             tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
                                                           reduction='none')
         self.after_mining_crossentropy =\
-            tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+            tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
+                                                          reduction='sum')
         self.smooth_l1 = tf.keras.losses.Huber(reduction='sum',
                                                name='smooth_L1')
 
@@ -211,12 +212,10 @@ class SSD300(tf.keras.Model):
         for i in range(len(self.VGG16_stage_4.layers)):
             self.VGG16_stage_4.get_layer(index=i).set_weights(
                 vgg16_original.get_layer(index=i+1).get_weights())
-            self.VGG16_stage_4.get_layer(index=i).trainable = False
 
         for j in range(len(self.VGG16_stage_5.layers)):
             self.VGG16_stage_5.get_layer(index=j).set_weights(
                 vgg16_original.get_layer(index=i+j+2).get_weights())
-            self.VGG16_stage_5.get_layer(index=j).trainable = False
 
     def getDefaultBoxes(self):
         """
@@ -293,7 +292,7 @@ class SSD300(tf.keras.Model):
 
         Args:
             - (tf.Tensor) confidences prediction: [B, N boxes, n classes]
-            - (tf.Tensor) confidence ground truth:  [B, N boxes, 1]
+            - (tf.Tensor) confidence ground truth:  [B, N boxes]
             - (tf.Tensor) localization offsets prediction: [B, N boxes, 4]
             - (tf.Tensor) localization offsets ground truth: [B, N boxes, 4]
 
@@ -308,26 +307,22 @@ class SSD300(tf.keras.Model):
                                                                    confs_pred)
 
         # Negatives mining with <3:1 ratio for negatives:positives
-        negatives_number = positives_number * 3
+        negatives_number = tf.dtypes.cast(positives_number, tf.int32) * 3
         negatives_rank = tf.argsort(confs_loss_before_mining, axis=1,
                                     direction='DESCENDING')
-        rank_idx = tf.keras.backend.eval(negatives_rank)
-        negatives_idx = tf.expand_dims(rank_idx <= negatives_number, 2)
+        rank_idx = tf.argsort(negatives_rank, axis=1)
+        negatives_idx = rank_idx <= tf.expand_dims(negatives_number, 1)
 
         # loss calculation (pos+neg for conf, pos for loc)
         confs_idx = tf.math.logical_or(positives_idx, negatives_idx)
-        confs_idx_rpt = tf.repeat(confs_idx, repeats=[self.num_categories],
-                                  axis=-1)
-        confs_loss = self.after_mining_crossentropy(
-            tf.reshape(confs_gt[confs_idx], [-1, confs_gt.shape[-1]]),
-            tf.reshape(confs_pred[confs_idx_rpt], [-1, confs_pred.shape[-1]]))
+        confs_loss = self.after_mining_crossentropy(confs_gt[confs_idx],
+                                                    confs_pred[confs_idx])
 
-        positives_idx_repeated = tf.repeat(confs_idx, repeats=[4], axis=-1)
-        locs_loss = self.smooth_l1(locs_gt[positives_idx_repeated],
-                                   locs_pred[positives_idx_repeated])
+        locs_loss = self.smooth_l1(locs_gt[positives_idx],
+                                   locs_pred[positives_idx])
 
-        confs_loss = confs_loss / positives_number
-        locs_loss = locs_loss / positives_number
+        confs_loss = confs_loss / tf.reduce_sum(positives_number)
+        locs_loss = locs_loss / tf.reduce_sum(positives_number)
 
         return confs_loss, locs_loss
 
