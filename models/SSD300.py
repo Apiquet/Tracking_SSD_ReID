@@ -15,9 +15,15 @@ from .VGG16 import VGG16
 
 class SSD300(tf.keras.Model):
 
-    def __init__(self, num_categories=10):
+    def __init__(self, num_categories=10, floatType=32):
         super(SSD300, self).__init__()
         self.num_categories = num_categories
+        if floatType == 32:
+            self.floatType = tf.float32
+        elif floatType == 16:
+            self.floatType = tf.float16
+        else:
+            raise Exception('floatType should be either 32 or 16')
 
         '''
             Cone Implementation
@@ -245,7 +251,8 @@ class SSD300(tf.keras.Model):
                             self.scales[fm_idx] * np.sqrt(ratio)])
 
             boxes_per_stage.append(tf.constant((boxes_fm_i)))
-        return boxes_per_stage, tf.convert_to_tensor(boxes, dtype=tf.float32)
+        return boxes_per_stage, tf.convert_to_tensor(boxes,
+                                                     dtype=self.floatType)
 
     def reshapeConfLoc(self, conf, loc, number_of_boxes):
         """
@@ -290,7 +297,7 @@ class SSD300(tf.keras.Model):
         """
         positives_idx = confs_gt > 0
         positives_number = tf.reduce_sum(
-            tf.dtypes.cast(positives_idx, tf.float32), axis=1)
+            tf.dtypes.cast(positives_idx, self.floatType), axis=1)
         confs_loss_before_mining = self.before_mining_crossentropy(confs_gt,
                                                                    confs_pred)
 

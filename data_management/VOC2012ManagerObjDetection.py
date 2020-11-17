@@ -13,8 +13,15 @@ import xml.etree.ElementTree as ET
 
 class VOC2012ManagerObjDetection():
 
-    def __init__(self, path, trainRatio=0.7, batch_size=32):
+    def __init__(self, path, trainRatio=0.7, batch_size=32, floatType=32):
         super(VOC2012ManagerObjDetection, self).__init__()
+        if floatType == 32:
+            self.floatType = tf.float32
+        elif floatType == 16:
+            self.floatType = tf.float16
+        else:
+            raise Exception('floatType should be either 32 or 16')
+
         self.path = path
         self.img_resolution = (300, 300)
         self.classes = {'undefined': 0,
@@ -68,7 +75,8 @@ class VOC2012ManagerObjDetection():
             boxes_img_i, classes_img_i = self.getAnnotations(img, (w, h))
             boxes.append(boxes_img_i)
             classes.append(classes_img_i)
-        return tf.convert_to_tensor(images, dtype=tf.float32), boxes, classes
+        return tf.convert_to_tensor(images, dtype=self.floatType),\
+            boxes, classes
 
     def getAnnotations(self, image_name: str, resolution: tuple):
         """
@@ -107,7 +115,7 @@ class VOC2012ManagerObjDetection():
             name = obj.find('name').text.lower().strip()
             classes.append(self.classes[name])
 
-        return tf.convert_to_tensor(boxes, dtype=tf.float32),\
+        return tf.convert_to_tensor(boxes, dtype=self.floatType),\
             tf.convert_to_tensor(classes, dtype=tf.int16)
 
     def getImagesAndGt(self, images_name: list, default_boxes: list):
@@ -149,7 +157,7 @@ class VOC2012ManagerObjDetection():
 
         return images,\
             tf.convert_to_tensor(gt_confs, dtype=tf.int16),\
-            tf.convert_to_tensor(gt_locs, dtype=tf.float32)
+            tf.convert_to_tensor(gt_locs, dtype=self.floatType)
 
     def computeRectangleArea(self, xmin, ymin, xmax, ymax):
         return (xmax - xmin) * (ymax - ymin)
@@ -286,7 +294,7 @@ class VOC2012ManagerObjDetection():
 
         iou_bin = tf.expand_dims(iou_bin, 1)
         iou_bin = tf.repeat(iou_bin, repeats=[4], axis=1)
-        offsets = offsets * tf.dtypes.cast(iou_bin, tf.float32)
+        offsets = offsets * tf.dtypes.cast(iou_bin, self.floatType)
         return offsets
 
     def getImagesAndGtSpeedUp(self, images_name: list, default_boxes: list):
@@ -312,7 +320,8 @@ class VOC2012ManagerObjDetection():
         gt_locs = []
         for i, gt_boxes_img in enumerate(boxes):
             gt_confs_per_image = tf.zeros([len(default_boxes)], tf.int16)
-            gt_locs_per_image = tf.zeros([len(default_boxes), 4], tf.float32)
+            gt_locs_per_image = tf.zeros([len(default_boxes), 4],
+                                         self.floatType)
             iou_bin_masks = []
             for g, gt_box in enumerate(gt_boxes_img):
                 iou_bin = self.computeJaccardIdxSpeedUp(gt_box,
@@ -330,4 +339,4 @@ class VOC2012ManagerObjDetection():
 
         return images,\
             tf.convert_to_tensor(gt_confs, dtype=tf.int16),\
-            tf.convert_to_tensor(gt_locs, dtype=tf.float32)
+            tf.convert_to_tensor(gt_locs, dtype=self.floatType)
