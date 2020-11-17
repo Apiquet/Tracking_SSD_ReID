@@ -91,32 +91,26 @@ class SSD300(tf.keras.Model):
         self.stage_4_conf = Conv2D(filters=4*num_categories,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu",
                                    name="conf_stage4")
         self.stage_7_conf = Conv2D(filters=6*num_categories,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu",
                                    name="conf_stage7")
         self.stage_8_conf = Conv2D(filters=6*num_categories,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu",
                                    name="conf_stage8")
         self.stage_9_conf = Conv2D(filters=6*num_categories,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu",
                                    name="conf_stage9")
         self.stage_10_conf = Conv2D(filters=4*num_categories,
                                     kernel_size=(3, 3),
                                     padding="same",
-                                    activation="relu",
                                     name="conf_stage10")
         self.stage_11_conf = Conv2D(filters=4*num_categories,
                                     kernel_size=(3, 3),
                                     padding="same",
-                                    activation="relu",
                                     name="conf_stage11")
 
         '''
@@ -125,32 +119,26 @@ class SSD300(tf.keras.Model):
         self.stage_4_loc = Conv2D(filters=4*4,
                                   kernel_size=(3, 3),
                                   padding="same",
-                                  activation="relu",
                                   name="loc_stage4")
         self.stage_7_loc = Conv2D(filters=6*4,
                                   kernel_size=(3, 3),
                                   padding="same",
-                                  activation="relu",
                                   name="loc_stage7")
         self.stage_8_loc = Conv2D(filters=6*4,
                                   kernel_size=(3, 3),
                                   padding="same",
-                                  activation="relu",
                                   name="loc_stage8")
         self.stage_9_loc = Conv2D(filters=6*4,
                                   kernel_size=(3, 3),
                                   padding="same",
-                                  activation="relu",
                                   name="loc_stage9")
         self.stage_10_loc = Conv2D(filters=4*4,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu",
                                    name="loc_stage10")
         self.stage_11_loc = Conv2D(filters=4*4,
                                    kernel_size=(3, 3),
                                    padding="same",
-                                   activation="relu",
                                    name="loc_stage11")
 
         '''
