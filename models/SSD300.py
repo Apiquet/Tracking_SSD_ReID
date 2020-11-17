@@ -357,10 +357,14 @@ class SSD300(tf.keras.Model):
         for i in range(len(confs_pred)):
             boxes = self.default_boxes + locs_pred[i]
 
-            idx_to_keep = tf.reduce_max(confs_pred[i], axis=1)\
+            idx_sup_thresh = tf.reduce_max(confs_pred[i], axis=1)\
                 >= score_threshold
-            classes = confs_pred[i][idx_to_keep]
-            classes = tf.argmax(classes, axis=1)
+
+            classes = tf.argmax(confs_pred[i], axis=1)
+            non_undefined_idx = classes > 0
+
+            idx_to_keep = tf.logical_and(idx_sup_thresh, non_undefined_idx)
+            classes = classes[idx_to_keep]
             classes_per_img.append(classes)
 
             idx_to_keep = tf.expand_dims(idx_to_keep, 1)
