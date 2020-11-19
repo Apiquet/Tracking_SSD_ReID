@@ -5,11 +5,12 @@
 Function to train SSD
 """
 
+import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
 
-def train(model, optimizer, db_manager, batches, weights_path,
+def train(model, optimizer, db_manager, imgs, confs, locs, weights_path,
           num_epoch=250, inter_save=5):
     """
     Method to train SSD architecture
@@ -24,10 +25,10 @@ def train(model, optimizer, db_manager, batches, weights_path,
         - (int) interval to save weights
     """
     for epoch in range(num_epoch):
-        for batch in tqdm(batches):
+        losses = []
+        for i in tqdm(range(len(imgs))):
             # get data from batch
-            images, confs_gt, locs_gt = db_manager.getImagesAndGtSpeedUp(
-                batch, model.default_boxes)
+            images, confs_gt, locs_gt = imgs[i], confs[i], locs[i]
 
             # get predictions and losses
             with tf.GradientTape() as tape:
@@ -40,11 +41,13 @@ def train(model, optimizer, db_manager, batches, weights_path,
                 confs_loss, locs_loss = model.calculateLoss(
                     confs_pred, confs_gt, locs_pred, locs_gt)
                 loss = confs_loss + 1*locs_loss
+                losses.append(loss)
 
             # back propagation
             gradients = tape.gradient(loss, model.trainable_variables)
             optimizer.apply_gradients(
                 zip(gradients, model.trainable_variables))
+        print("Mean loss: {} on epoch {}".format(np.mean(losses), epoch))
         if epoch % inter_save == 0:
             model.save_weights(weights_path +
                                "/ssd_weights_epoch_{:03d}.h5".format(epoch))
