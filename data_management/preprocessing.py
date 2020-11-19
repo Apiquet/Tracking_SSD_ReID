@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+VOC2012 preprocessing to speed up training
+"""
+import sys
+sys.path.insert(1, '../')
+
+from .VOC2012ManagerObjDetection import VOC2012ManagerObjDetection
+from models.SSD300 import SSD300
+
+import numpy as np
+from tqdm import tqdm
+
+from glob import glob
+import tensorflow as tf
+
+
+def saveGTdata(voc2012path, output_path):
+    """
+    Method to save data in a proper format to train the network
+
+    Args:
+        - (str) path to save data
+    """
+    db_manager = VOC2012ManagerObjDetection(voc2012path + '/',
+                                            batch_size=32, floatType=32)
+    SSD300_model = SSD300(21, floatType=32)
+    for i, batch in enumerate(tqdm(db_manager.batches)):
+        # get data from batch
+        imgs, confs, locs = db_manager.getImagesAndGtSpeedUp(
+            batch, SSD300_model.default_boxes)
+        np.save(output_path + "/imgs_{:05d}.npy".format(i),
+                imgs, allow_pickle=True)
+        np.save(output_path + "/confs_{:05d}.npy".format(i),
+                confs, allow_pickle=True)
+        np.save(output_path + "locs_{:05d}.npy".format(i),
+                locs, allow_pickle=True)
+
+
+def loadGTdata(path):
+    """
+    Method to load needed data for training
+    B: batch size
+    N: number of objects in a given image
+    D: number of default boxes
+
+    Args:
+        - (str) path to load
+
+    Return:
+        - (list of tf.Tensor) images (B, 300, 300, 3)
+        - (list of tf.Tensor) confs gt (B, N, D)
+        - (list of tf.Tensor) locs gt (B, N, D, 4)
+    """
+    print("Loading images...")
+    imgs = []
+    for batch in tqdm(sorted(glob(path + "/imgs*.npy"))):
+        # get data from batch
+        imgs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
+
+    print("Loading confs gt...")
+    confs = []
+    for batch in tqdm(sorted(glob(path + "/confs*.npy"))):
+        # get data from batch
+        confs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
+
+    print("Loading locs gt...")
+    locs = []
+    for batch in tqdm(sorted(glob(path + "/locs*.npy"))):
+        # get data from batch
+        locs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
+
+    return imgs, confs, locs
