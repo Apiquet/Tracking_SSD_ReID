@@ -54,19 +54,16 @@ def loadGTdata(path):
         - (list of tf.Tensor) confs gt (B, N, D)
         - (list of tf.Tensor) locs gt (B, N, D, 4)
     """
-    print("Loading images...")
     imgs = []
     for batch in tqdm(sorted(glob(path + "/imgs*.npy"))):
         # get data from batch
         imgs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
 
-    print("Loading confs gt...")
     confs = []
     for batch in tqdm(sorted(glob(path + "/confs*.npy"))):
         # get data from batch
         confs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
 
-    print("Loading locs gt...")
     locs = []
     for batch in tqdm(sorted(glob(path + "/locs*.npy"))):
         # get data from batch
