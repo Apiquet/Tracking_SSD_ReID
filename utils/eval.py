@@ -13,7 +13,8 @@ from tqdm import tqdm
 import tensorflow as tf
 
 
-def pltPredGt(model, db_manager, images_names, score_threshold=0.1):
+def pltPredGt(model, db_manager, images_names,
+              score_threshold=0.1, draw_default=False):
     """
     Method to plot images with predicted and gt boxes
 
@@ -22,12 +23,15 @@ def pltPredGt(model, db_manager, images_names, score_threshold=0.1):
         - VOC2012ManagerObjDetection class from data/
         - (list) images names
         - (float) display predicted boxes if score > to specified number
+        - (bool) default: displaying default boxes selected as gt
     """
     imgs, boxes_gt, classes_gt = db_manager.getRawData(images_names)
+    images, confs_gt, locs_gt = db_manager.getImagesAndGtSpeedUp(
+        images_names, model.default_boxes)
 
     columns = int(len(imgs) / 2)
     rows = int(len(imgs) / 2) + 1
-    size = 3
+    size = 6
     fig = plt.figure(figsize=(columns*size, rows*size))
 
     num_pic = 1
@@ -37,10 +41,16 @@ def pltPredGt(model, db_manager, images_names, score_threshold=0.1):
         confs_pred = tf.concat(confs, axis=1)
         locs_pred = tf.concat(locs, axis=1)
         confs_pred = tf.math.softmax(confs_pred, axis=2)
-        classes, boxes = model.getPredictionsFromConfsLocs(
-            confs_pred, locs_pred,
-            score_threshold=score_threshold,
-            box_encoding="corner")
+        if draw_default:
+            classes, boxes = model.getPredictionsFromConfsLocs(
+                tf.expand_dims(confs_gt[i], 0), tf.expand_dims(locs_gt[i], 0),
+                score_threshold=score_threshold,
+                box_encoding="corner", default=True)
+        else:
+            classes, boxes = model.getPredictionsFromConfsLocs(
+                confs_pred, locs_pred,
+                score_threshold=score_threshold,
+                box_encoding="corner")
         fig.add_subplot(rows, columns, num_pic)
         img_res = img*255
         img_pil = Image.fromarray(img_res.numpy().astype(np.uint8))

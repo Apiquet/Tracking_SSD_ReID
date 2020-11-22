@@ -342,7 +342,8 @@ class SSD300(tf.keras.Model):
 
     def getPredictionsFromConfsLocs(self, confs_pred, locs_pred,
                                     score_threshold=0.2,
-                                    box_encoding="center"):
+                                    box_encoding="center",
+                                    default=False):
         """
         Method to convert output offsets to boxes
         and scores to maximum class number
@@ -354,6 +355,7 @@ class SSD300(tf.keras.Model):
             - Optional: score threshold on confs_pred to accept prediction
             - Optional: box encoding: center: cx, cy, w, h;
                                       corner: xmin, ymin, xmax, ymax
+            - Optional: default: displaying default boxes selected as gt
 
         Return:
             - (tf.Tensor) Predicted class: [B, N boxes]
@@ -362,21 +364,24 @@ class SSD300(tf.keras.Model):
         boxes_per_img = []
         classes_per_img = []
         for i in range(len(confs_pred)):
-            boxes = self.default_boxes + locs_pred[i]
+            idx_sup_thresh = tf.ones([confs_pred[i].shape[0]], tf.int32) == 1
+            if default:
+                boxes = self.default_boxes
+                classes = confs_pred[i]
+            else:
+                boxes = self.default_boxes + locs_pred[i]
 
-            idx_sup_thresh = tf.reduce_max(confs_pred[i], axis=1)\
-                >= score_threshold
+                idx_sup_thresh = tf.reduce_max(confs_pred[i], axis=1)\
+                    >= score_threshold
 
-            classes = tf.argmax(confs_pred[i], axis=1)
+                classes = tf.argmax(confs_pred[i], axis=1)
             non_undefined_idx = classes > 0
 
             idx_to_keep = tf.logical_and(idx_sup_thresh, non_undefined_idx)
             classes = classes[idx_to_keep]
             classes_per_img.append(classes)
 
-            idx_to_keep = tf.expand_dims(idx_to_keep, 1)
-            idx_to_keep = tf.repeat(idx_to_keep, repeats=[4], axis=-1)
-            boxes = tf.reshape(boxes[idx_to_keep], [-1, 4])
+            boxes = boxes[idx_to_keep]
             if box_encoding == "corner":
                 boxes = tf.concat([boxes[:, :2] - boxes[:, 2:] / 2,
                                    boxes[:, :2] + boxes[:, 2:] / 2],
