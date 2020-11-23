@@ -5,12 +5,13 @@
 Function to train SSD
 """
 
+import cv2
+from glob import glob
+from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
-from matplotlib import pyplot as plt
-from glob import glob
-from tqdm import tqdm
 import tensorflow as tf
+from tqdm import tqdm
 
 
 def pltPredGt(model, db_manager, images_names,
@@ -55,13 +56,6 @@ def pltPredGt(model, db_manager, images_names,
         img_res = img*255
         img_pil = Image.fromarray(img_res.numpy().astype(np.uint8))
         draw = ImageDraw.Draw(img_pil)
-        for b, box in enumerate(boxes[0]):
-            min_point = int(box[0] * 300), int(box[1] * 300)
-            end_point = int(box[2] * 300), int(box[3] * 300)
-            draw.rectangle((min_point, end_point), outline='red')
-            draw.text((min_point[0]+5, min_point[1]+5),
-                      list(db_manager.classes.keys())[classes[0][b]],
-                      fill=(255, 0, 0, 0))
         for b, box in enumerate(boxes_gt[i]):
             box = tf.concat([box[:2] - box[2:] / 2,
                              box[:2] + box[2:] / 2], axis=-1)
@@ -70,8 +64,57 @@ def pltPredGt(model, db_manager, images_names,
             draw.rectangle((min_point, end_point), outline='green')
             draw.text((min_point[0]+5, min_point[1]+5),
                       list(db_manager.classes.keys())[classes_gt[i][b]],
-                      fill=(0, 255, 0, 0))
+                      fill=(0, 255, 0, 0), width=30)
+        for b, box in enumerate(boxes[0]):
+            min_point = int(box[0] * 300), int(box[1] * 300)
+            end_point = int(box[2] * 300), int(box[3] * 300)
+            draw.rectangle((min_point, end_point), outline='red')
+            draw.text((min_point[0]+5, min_point[1]+5),
+                      list(db_manager.classes.keys())[classes[0][b]],
+                      fill=(255, 0, 0, 0))
         plt.title("Epoch: {}".format(images_names[i]))
         plt.imshow(img_pil)
         num_pic += 1
     plt.show()
+
+
+def pltPredOnVideo(model, db_manager, video_path, out_gif,
+                   score_threshold=0.6, start_idx=0, end_idx=-1):
+    cap = cv2.VideoCapture(video_path)
+    imgs = []
+    i = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        i += 1
+        if i <= start_idx:
+            continue
+        elif end_idx >= 0 and i > end_idx:
+            break
+        img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        img = tf.image.resize(np.array(img), (300, 300)) / 255.
+        img_ssd = tf.convert_to_tensor(img, dtype=tf.float32)
+        img_ssd = tf.expand_dims(img_ssd, 0)
+        confs, locs = model(img_ssd)
+        confs_pred = tf.concat(confs, axis=1)
+        locs_pred = tf.concat(locs, axis=1)
+        confs_pred = tf.math.softmax(confs_pred, axis=2)
+
+        classes, boxes = model.getPredictionsFromConfsLocs(
+                confs_pred, locs_pred,
+                score_threshold=score_threshold,
+                box_encoding="corner")
+        img_res = img*255
+        img_pil = Image.fromarray(img_res.numpy().astype(np.uint8))
+        draw = ImageDraw.Draw(img_pil)
+        for b, box in enumerate(boxes[0]):
+            min_point = int(box[0] * 300), int(box[1] * 300)
+            end_point = int(box[2] * 300), int(box[3] * 300)
+            draw.rectangle((min_point, end_point), outline='red')
+            draw.text((min_point[0]+5, min_point[1]+5),
+                      list(db_manager.classes.keys())[classes[0][b]],
+                      fill=(255, 0, 0, 0))
+        imgs.append(img_pil)
+    imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
+                 save_all=True, duration=100, loop=0)
