@@ -42,7 +42,7 @@ def train(model, optimizer, db_manager, imgs, confs, locs, weights_path,
                     confs_pred, confs_gt, locs_pred, locs_gt)
                 loss = confs_loss + 1*locs_loss  # alpha equals 1
                 l2 = [tf.nn.l2_loss(t)
-                      for t in SSD300_model.trainable_variables]
+                      for t in model.trainable_variables]
                 loss = loss + 0.001 * tf.math.reduce_sum(l2)
                 losses.append(loss)
 

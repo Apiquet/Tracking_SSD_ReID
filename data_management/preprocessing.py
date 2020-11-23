@@ -42,8 +42,9 @@ def saveGTdata(voc2012path, output_path):
 def loadGTdata(path):
     """
     Method to load needed data for training
+    N: batch size
     B: batch size
-    N: number of objects in a given image
+    O: number of objects in a given image
     D: number of default boxes
 
     Args:
@@ -51,8 +52,8 @@ def loadGTdata(path):
 
     Return:
         - (list of tf.Tensor) images (B, 300, 300, 3)
-        - (list of tf.Tensor) confs gt (B, N, D)
-        - (list of tf.Tensor) locs gt (B, N, D, 4)
+        - (list of tf.Tensor) confs gt (N, B, O, D)
+        - (list of tf.Tensor) locs gt (N, B, O, D, 4)
     """
     imgs = []
     for batch in tqdm(sorted(glob(path + "/imgs*.npy"))):
@@ -68,5 +69,32 @@ def loadGTdata(path):
     for batch in tqdm(sorted(glob(path + "/locs*.npy"))):
         # get data from batch
         locs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
+
+    return imgs, confs, locs
+
+
+def loadSpecificGTdata(path, idx):
+    """
+    Method to load a particular batch
+    B: batch size
+    N: number of objects in a given image
+    D: number of default boxes
+
+    Args:
+        - (str) path to load
+
+    Return:
+        - (list of tf.Tensor) images (B, 300, 300, 3)
+        - (list of tf.Tensor) confs gt (B, N, D)
+        - (list of tf.Tensor) locs gt (B, N, D, 4)
+    """
+    batch = sorted(glob(path + "/imgs*.npy"))[idx]
+    imgs = tf.convert_to_tensor(np.load(batch, allow_pickle=True))
+
+    batch = sorted(glob(path + "/confs*.npy"))[idx]
+    confs = tf.convert_to_tensor(np.load(batch, allow_pickle=True))
+
+    batch = sorted(glob(path + "/locs*.npy"))[idx]
+    locs = tf.convert_to_tensor(np.load(batch, allow_pickle=True))
 
     return imgs, confs, locs
