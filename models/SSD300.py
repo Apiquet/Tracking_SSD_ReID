@@ -359,10 +359,12 @@ class SSD300(tf.keras.Model):
 
         Return:
             - (tf.Tensor) Predicted class: [B, N boxes]
+            - (tf.Tensor) Predicted score: [B, N boxes]
             - (tf.Tensor) Predicted boxes (cx, cy, w, h): [B, N boxes, 4]
         """
         boxes_per_img = []
         classes_per_img = []
+        scores_per_img = []
         for i in range(len(confs_pred)):
             idx_sup_thresh = tf.ones([confs_pred[i].shape[0]], tf.int32) == 1
             if default:
@@ -370,14 +372,18 @@ class SSD300(tf.keras.Model):
                 classes = confs_pred[i]
             else:
                 boxes = self.default_boxes + locs_pred[i]
+                scores = tf.reduce_max(confs_pred[i], axis=1)
 
-                idx_sup_thresh = tf.reduce_max(confs_pred[i], axis=1)\
-                    >= score_threshold
+                idx_sup_thresh = scores >= score_threshold
 
                 classes = tf.argmax(confs_pred[i], axis=1)
             non_undefined_idx = classes > 0
 
             idx_to_keep = tf.logical_and(idx_sup_thresh, non_undefined_idx)
+
+            scores = scores[idx_to_keep]
+            scores_per_img.append(scores)
+
             classes = classes[idx_to_keep]
             classes_per_img.append(classes)
 
@@ -387,7 +393,7 @@ class SSD300(tf.keras.Model):
                                    boxes[:, :2] + boxes[:, 2:] / 2],
                                   axis=-1)
             boxes_per_img.append(boxes)
-        return classes_per_img, boxes_per_img
+        return classes_per_img, scores_per_img, boxes_per_img
 
     def call(self, x):
         confs_per_stage = []
