@@ -10,6 +10,7 @@ from glob import glob
 from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
+import random
 import tensorflow as tf
 from tqdm import tqdm
 
@@ -80,6 +81,10 @@ def pltPredGt(model, db_manager, images_names,
 
 def pltPredOnVideo(model, db_manager, video_path, out_gif,
                    score_threshold=0.6, start_idx=0, end_idx=-1):
+    COLORS = [(0, 102, 51),
+              (0, 153, 153),
+              (102, 0, 102),
+              (156, 76, 0)]
     cap = cv2.VideoCapture(video_path)
     imgs = []
     i = 0
@@ -92,29 +97,32 @@ def pltPredOnVideo(model, db_manager, video_path, out_gif,
             continue
         elif end_idx >= 0 and i > end_idx:
             break
+        orig_height, orig_width = frame.shape[0], frame.shape[1]
         img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        img = tf.image.resize(np.array(img), (300, 300)) / 255.
-        img_ssd = tf.convert_to_tensor(img, dtype=tf.float32)
+        img_ssd = tf.image.resize(np.array(img), (300, 300)) / 255.
+        img_ssd = tf.convert_to_tensor(img_ssd, dtype=tf.float32)
         img_ssd = tf.expand_dims(img_ssd, 0)
         confs, locs = model(img_ssd)
         confs_pred = tf.concat(confs, axis=1)
         locs_pred = tf.concat(locs, axis=1)
         confs_pred = tf.math.softmax(confs_pred, axis=2)
 
-        classes, boxes = model.getPredictionsFromConfsLocs(
+        classes, scores, boxes = model.getPredictionsFromConfsLocs(
                 confs_pred, locs_pred,
                 score_threshold=score_threshold,
                 box_encoding="corner")
-        img_res = img*255
-        img_pil = Image.fromarray(img_res.numpy().astype(np.uint8))
-        draw = ImageDraw.Draw(img_pil)
+
+        draw = ImageDraw.Draw(img)
         for b, box in enumerate(boxes[0]):
-            min_point = int(box[0] * 300), int(box[1] * 300)
-            end_point = int(box[2] * 300), int(box[3] * 300)
-            draw.rectangle((min_point, end_point), outline='red')
+            color = random.choice(COLORS)
+            min_point = int(box[0] * orig_width), int(box[1] * orig_height)
+            end_point = int(box[2] * orig_width), int(box[3] * orig_height)
+            draw.rectangle((min_point, end_point), outline=color)
             draw.text((min_point[0]+5, min_point[1]+5),
+                      "{}: {:.02f}".format(
                       list(db_manager.classes.keys())[classes[0][b]],
-                      fill=(255, 0, 0, 0))
-        imgs.append(img_pil)
+                      scores[0][b]),
+                      fill=color)
+        imgs.append(img)
     imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
                  save_all=True, duration=100, loop=0)
