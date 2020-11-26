@@ -321,24 +321,34 @@ class SSD300(tf.keras.Model):
 
         return confs_loss, locs_loss
 
-    def nms(self, boxes_pred, scores):
+    def nms(self, boxes_pred, scores, classes):
         """
         Method to filter boxes with score < 0.01
-        Return maximum 200 boxes per image
+        Get maximum 200 boxes per image
+        If IoU>=0.45 between two boxes of the same class, the biggest is kept
         B = mini-batch size
+        F = number of non filtered boxes
 
         Args:
             - (tf.Tensor) boxes predicted: [B, N boxes, 4]
-            - (tf.Tensor) scores for each box:  [B, N boxes]
+            - (tf.Tensor) scores of each box:  [B, N boxes]
+            - (tf.Tensor) classes of each box:  [B, N boxes]
 
         Return:
-            - (tf.Tensor) bool, False if box must be removed: [B, N boxes]
+            - (tf.Tensor) boxes predicted: [B, F, 4]
+            - (tf.Tensor) scores for each box:  [B, F]
         """
-        bool_tensor = tf.dtypes.cast(scores > 0.01, tf.int16) * scores
-        rank = tf.argsort(bool_tensor, axis=1, direction='DESCENDING')
-        rank_idx = tf.keras.backend.eval(rank)
-        bool_tensor = rank_idx <= 200
-        return bool_tensor
+        score_threshold_idx = scores >= 0.01
+        scores = scores[score_threshold_idx]
+        boxes_pred = boxes_pred[score_threshold_idx]
+
+        rank = tf.argsort(scores, axis=1, direction='DESCENDING')
+        rank_idx = tf.argsort(rank, axis=1)
+        rank_threshold_idx = rank_idx <= tf.expand_dims(200, 1)
+        scores = scores[rank_threshold_idx]
+        boxes_pred = boxes_pred[rank_threshold_idx]
+
+        return boxes_pred, scores
 
     def getPredictionsFromConfsLocs(self, confs_pred, locs_pred,
                                     score_threshold=0.2,
