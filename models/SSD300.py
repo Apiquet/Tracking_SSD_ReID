@@ -342,9 +342,9 @@ class SSD300(tf.keras.Model):
         scores = scores[score_threshold_idx]
         boxes_pred = boxes_pred[score_threshold_idx]
 
-        rank = tf.argsort(scores, axis=1, direction='DESCENDING')
-        rank_idx = tf.argsort(rank, axis=1)
-        rank_threshold_idx = rank_idx <= tf.expand_dims(200, 1)
+        rank = tf.argsort(scores, axis=0, direction='DESCENDING')
+        rank_idx = tf.argsort(rank, axis=0)
+        rank_threshold_idx = rank_idx <= 200
         scores = scores[rank_threshold_idx]
         boxes_pred = boxes_pred[rank_threshold_idx]
 
@@ -358,6 +358,7 @@ class SSD300(tf.keras.Model):
         Method to convert output offsets to boxes
         and scores to maximum class number
         Return boxes with score superior to score_threshold
+        and non undefined class
 
         Args:
             - (tf.Tensor) scores for each box:  [B, N boxes, N classes]
