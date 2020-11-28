@@ -321,7 +321,59 @@ class SSD300(tf.keras.Model):
 
         return confs_loss, locs_loss
 
-    def nms(self, boxes_pred, scores, classes):
+    def computeJaccardIdx(self, ref_box: tf.Tensor, boxes: tf.Tensor,
+                          iou_threshold: float):
+        """
+        Method to get the boolean tensor where iou is superior to
+        the specified threshold between the gt box and the default one
+        D: number of default boxes
+
+        Args:
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [4]
+            - (tf.Tensor) box with 4 parameters: cx, cy, w, h [D, 4]
+            - (float) iou threshold to use
+
+        Return:
+            - (tf.Tensor) 0 if iou > threshold, 1 otherwise [D]
+        """
+        # convert to xmin, ymin, xmax, ymax
+        boxes = tf.concat([
+            boxes[:, :2] - boxes[:, 2:] / 2,
+            boxes[:, :2] + boxes[:, 2:] / 2], axis=-1)
+        ref_box = tf.concat([ref_box[:2] - ref_box[2:] / 2,
+                             ref_box[:2] + ref_box[2:] / 2], axis=-1)
+        ref_box = tf.expand_dims(ref_box, 0)
+        ref_box = tf.repeat(ref_box, repeats=[boxes.shape[0]], axis=0)
+
+        # compute intersection
+        inter_xymin = tf.math.maximum(boxes[:, :2],
+                                      ref_box[:, :2])
+        inter_xymax = tf.math.minimum(boxes[:, 2:],
+                                      ref_box[:, 2:])
+        inter_width_height = tf.clip_by_value(inter_xymax - inter_xymin,
+                                              0.0, 300.0)
+        inter_area = inter_width_height[:, 0] * inter_width_height[:, 1]
+
+        # compute area of the boxes
+        ref_box_width_height =\
+            tf.clip_by_value(ref_box[:, 2:] - ref_box[:, :2],
+                             0.0, 300.0)
+        ref_box_width_height_area = ref_box_width_height[:, 0] *\
+            ref_box_width_height[:, 1]
+
+        boxes_width_height =\
+            tf.clip_by_value(boxes[:, 2:] - boxes[:, :2],
+                             0.0, 300.0)
+        boxes_width_height_area = boxes_width_height[:, 0] *\
+            boxes_width_height[:, 1]
+
+        # compute iou
+        iou = inter_area / (ref_box_width_height_area +
+                            boxes_width_height_area - inter_area)
+        return iou >= iou_threshold
+
+    def nms(self, boxes: tf.Tensor, classes: tf.Tensor,
+            scores: tf.Tensor):
         """
         Method to filter boxes with score < 0.01
         Get maximum 200 boxes per image
@@ -330,26 +382,51 @@ class SSD300(tf.keras.Model):
         F = number of non filtered boxes
 
         Args:
-            - (tf.Tensor) boxes predicted: [B, N boxes, 4]
-            - (tf.Tensor) scores of each box:  [B, N boxes]
-            - (tf.Tensor) classes of each box:  [B, N boxes]
+            - (tf.Tensor) boxes predicted: [N boxes, 4]
+            - (tf.Tensor) classes of each box:  [N boxes]
+            - (tf.Tensor) scores of each box:  [N boxes]
 
         Return:
-            - (tf.Tensor) boxes predicted: [B, F, 4]
-            - (tf.Tensor) scores for each box:  [B, F]
+            - (tf.Tensor) boxes predicted: [F, 4]
+            - (tf.Tensor) class for each box:  [F]
+            - (tf.Tensor) scores for each box:  [F]
         """
         score_threshold_idx = scores >= 0.01
         scores = scores[score_threshold_idx]
-        boxes_pred = boxes_pred[score_threshold_idx]
+        boxes = boxes[score_threshold_idx]
 
         rank = tf.argsort(scores, axis=0, direction='DESCENDING')
-        rank_idx = tf.argsort(rank, axis=0)
-        rank_threshold_idx = rank_idx <= 200
+        rank_threshold_idx = rank <= 200
+
         scores = scores[rank_threshold_idx]
         classes = classes[rank_threshold_idx]
-        boxes_pred = boxes_pred[rank_threshold_idx]
+        boxes = boxes[rank_threshold_idx]
 
-        return boxes_pred, scores, classes
+        filtered_boxes = []
+        filtered_scores = []
+        filtered_classes = []
+        for category in tf.unique(classes)[0]:
+            cat_idx = classes == category
+            cat_boxes = boxes[cat_idx]
+            cat_scores = scores[cat_idx]
+
+            iou = self.computeJaccardIdx(cat_boxes[0], cat_boxes, 0.45)
+            overlap_scores = cat_scores[iou]
+            iou = tf.expand_dims(iou, 1)
+            iou = tf.repeat(iou, repeats=[4], axis=1)
+            overlap_boxes = tf.reshape(cat_boxes[iou],
+                                       (overlap_scores.shape[0], 4))
+            mean_box = tf.math.reduce_mean(overlap_boxes, axis=0,
+                                           keepdims=True)
+            filtered_boxes.append(mean_box)
+            scores = tf.math.reduce_max(overlap_scores, axis=0, keepdims=True)
+            filtered_scores.append(scores)
+            filtered_classes.append(category)
+
+        return tf.convert_to_tensor(filtered_boxes, dtype=tf.float32),\
+            tf.expand_dims(tf.convert_to_tensor(filtered_classes,
+                                                dtype=tf.int16), 0),\
+            tf.convert_to_tensor(filtered_scores, dtype=tf.float32)
 
     def getPredictionsFromConfsLocs(self, confs_pred, locs_pred,
                                     score_threshold=0.2,
@@ -370,9 +447,9 @@ class SSD300(tf.keras.Model):
             - Optional: default: displaying default boxes selected as gt
 
         Return:
+            - (tf.Tensor) Predicted boxes (cx, cy, w, h): [B, N boxes, 4]
             - (tf.Tensor) Predicted class: [B, N boxes]
             - (tf.Tensor) Predicted score: [B, N boxes]
-            - (tf.Tensor) Predicted boxes (cx, cy, w, h): [B, N boxes, 4]
         """
         boxes_per_img = []
         classes_per_img = []
@@ -405,7 +482,7 @@ class SSD300(tf.keras.Model):
                                    boxes[:, :2] + boxes[:, 2:] / 2],
                                   axis=-1)
             boxes_per_img.append(boxes)
-        return classes_per_img, scores_per_img, boxes_per_img
+        return boxes_per_img, classes_per_img, scores_per_img
 
     def call(self, x):
         confs_per_stage = []

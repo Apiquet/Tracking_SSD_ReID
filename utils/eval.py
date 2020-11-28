@@ -15,35 +15,45 @@ import tensorflow as tf
 from tqdm import tqdm
 
 
-def pltPredOnImg(img, boxes, classes, db_manager):
+COLORS = [(0, 102, 51),
+          (0, 153, 153),
+          (102, 0, 102),
+          (156, 76, 0)]
+
+
+def pltPredOnImg(img, boxes, classes, scores, db_manager):
     """
-    Method to plot boxes and classes on images
+    Method to plot boxes, classes and scores on images
 
     Args:
         - (tf.Tensor) image:  [Any, Any, Any]
         - (tf.Tensor) boxes of each box:  [N boxes, 4]
         - (tf.Tensor) classes of each box:  [N boxes]
+        - (tf.Tensor) confidence of each box:  [N boxes]
         - VOC2012ManagerObjDetection class from data/
     """
-    fig = plt.figure(figsize=(12, 12))
+    fig = plt.figure(figsize=(8, 8))
 
     img_pil = Image.fromarray(img.numpy().astype(np.uint8))
     draw = ImageDraw.Draw(img_pil)
     for b, box in enumerate(boxes):
+        color = random.choice(COLORS)
         box = tf.concat([box[:2] - box[2:] / 2,
                          box[:2] + box[2:] / 2], axis=-1)
         min_point = int(box[0] * 300), int(box[1] * 300)
         end_point = int(box[2] * 300), int(box[3] * 300)
-        draw.rectangle((min_point, end_point), outline='green')
+        draw.rectangle((min_point, end_point), outline=color)
         draw.text((min_point[0]+5, min_point[1]+5),
+                  "{}: {:.02f}".format(
                   list(db_manager.classes.keys())[classes[b]],
-                  fill=(0, 255, 0, 0))
+                  scores[b]),
+                  fill=color)
     plt.imshow(img_pil)
     plt.show()
 
 
 def pltPredGt(model, db_manager, images_names: str,
-              score_threshold: float=0.1, draw_default: bool=False):
+              score_threshold: float = 0.1, draw_default: bool = False):
     """
     Method to plot images with predicted and gt boxes
 
@@ -71,12 +81,12 @@ def pltPredGt(model, db_manager, images_names: str,
         locs_pred = tf.concat(locs, axis=1)
         confs_pred = tf.math.softmax(confs_pred, axis=2)
         if draw_default:
-            classes, boxes = model.getPredictionsFromConfsLocs(
+            boxes, classes, scores = model.getPredictionsFromConfsLocs(
                 tf.expand_dims(confs_gt[i], 0), tf.expand_dims(locs_gt[i], 0),
                 score_threshold=score_threshold,
                 box_encoding="corner", default=True)
         else:
-            classes, boxes = model.getPredictionsFromConfsLocs(
+            boxes, classes, scores = model.getPredictionsFromConfsLocs(
                 confs_pred, locs_pred,
                 score_threshold=score_threshold,
                 box_encoding="corner")
@@ -107,8 +117,8 @@ def pltPredGt(model, db_manager, images_names: str,
 
 
 def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
-                   score_threshold: float=0.6, start_idx: int=0,
-                   end_idx: int=-1):
+                   score_threshold: float = 0.6, start_idx: int = 0,
+                   end_idx: int = -1):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
@@ -122,10 +132,6 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         - (int) start frame idx, default is 0
         - (int) end frame idx, default is -1
     """
-    COLORS = [(0, 102, 51),
-              (0, 153, 153),
-              (102, 0, 102),
-              (156, 76, 0)]
     cap = cv2.VideoCapture(video_path)
     imgs = []
     i = 0
@@ -148,10 +154,12 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         locs_pred = tf.concat(locs, axis=1)
         confs_pred = tf.math.softmax(confs_pred, axis=2)
 
-        classes, scores, boxes = model.getPredictionsFromConfsLocs(
+        boxes, classes, scores = model.getPredictionsFromConfsLocs(
                 confs_pred, locs_pred,
                 score_threshold=score_threshold,
                 box_encoding="corner")
+
+        boxes, classes, scores = model.nms(boxes[0], classes[0], scores[0])
 
         draw = ImageDraw.Draw(img)
         for b, box in enumerate(boxes[0]):
