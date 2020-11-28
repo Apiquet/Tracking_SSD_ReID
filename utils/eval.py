@@ -23,6 +23,7 @@ def pltPredOnImg(img, boxes, classes, db_manager):
         - (tf.Tensor) image:  [Any, Any, Any]
         - (tf.Tensor) boxes of each box:  [N boxes, 4]
         - (tf.Tensor) classes of each box:  [N boxes]
+        - VOC2012ManagerObjDetection class from data/
     """
     fig = plt.figure(figsize=(12, 12))
 
@@ -41,8 +42,8 @@ def pltPredOnImg(img, boxes, classes, db_manager):
     plt.show()
 
 
-def pltPredGt(model, db_manager, images_names,
-              score_threshold=0.1, draw_default=False):
+def pltPredGt(model, db_manager, images_names: str,
+              score_threshold: float=0.1, draw_default: bool=False):
     """
     Method to plot images with predicted and gt boxes
 
@@ -105,8 +106,22 @@ def pltPredGt(model, db_manager, images_names,
     plt.show()
 
 
-def pltPredOnVideo(model, db_manager, video_path, out_gif,
-                   score_threshold=0.6, start_idx=0, end_idx=-1):
+def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
+                   score_threshold: float=0.6, start_idx: int=0,
+                   end_idx: int=-1):
+    """
+    Method to infer a model on a MP4 video
+    Create a gif with drawn boxes, classes and confidence
+
+    Args:
+        - SSD300 class from models/SSD300.py
+        - VOC2012ManagerObjDetection class from data/
+        - (str) video path (MP4)
+        - (str) video path (MP4)
+        - (float) score threshold to draw a box
+        - (int) start frame idx, default is 0
+        - (int) end frame idx, default is -1
+    """
     COLORS = [(0, 102, 51),
               (0, 153, 153),
               (102, 0, 102),
