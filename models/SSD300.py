@@ -346,9 +346,10 @@ class SSD300(tf.keras.Model):
         rank_idx = tf.argsort(rank, axis=0)
         rank_threshold_idx = rank_idx <= 200
         scores = scores[rank_threshold_idx]
+        classes = classes[rank_threshold_idx]
         boxes_pred = boxes_pred[rank_threshold_idx]
 
-        return boxes_pred, scores
+        return boxes_pred, scores, classes
 
     def getPredictionsFromConfsLocs(self, confs_pred, locs_pred,
                                     score_threshold=0.2,

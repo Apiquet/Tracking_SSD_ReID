@@ -15,6 +15,32 @@ import tensorflow as tf
 from tqdm import tqdm
 
 
+def pltPredOnImg(img, boxes, classes, db_manager):
+    """
+    Method to plot boxes and classes on images
+
+    Args:
+        - (tf.Tensor) image:  [Any, Any, Any]
+        - (tf.Tensor) boxes of each box:  [N boxes, 4]
+        - (tf.Tensor) classes of each box:  [N boxes]
+    """
+    fig = plt.figure(figsize=(12, 12))
+
+    img_pil = Image.fromarray(img.numpy().astype(np.uint8))
+    draw = ImageDraw.Draw(img_pil)
+    for b, box in enumerate(boxes):
+        box = tf.concat([box[:2] - box[2:] / 2,
+                         box[:2] + box[2:] / 2], axis=-1)
+        min_point = int(box[0] * 300), int(box[1] * 300)
+        end_point = int(box[2] * 300), int(box[3] * 300)
+        draw.rectangle((min_point, end_point), outline='green')
+        draw.text((min_point[0]+5, min_point[1]+5),
+                  list(db_manager.classes.keys())[classes[b]],
+                  fill=(0, 255, 0, 0))
+    plt.imshow(img_pil)
+    plt.show()
+
+
 def pltPredGt(model, db_manager, images_names,
               score_threshold=0.1, draw_default=False):
     """
