@@ -407,11 +407,14 @@ class SSD300(tf.keras.Model):
         filtered_boxes = []
         filtered_classes = []
         filtered_scores = []
+
+        # loop over available classes
         for category in tf.unique(classes)[0]:
             cat_idx = classes == category
             cat_boxes = boxes[cat_idx]
             cat_scores = scores[cat_idx]
 
+            # compute mean boxes until there is no more overlapping boxes
             while cat_boxes.shape[0] != 0:
                 iou = self.computeJaccardIdx(cat_boxes[0], cat_boxes, 0.3)
                 not_iou = tf.math.logical_not(iou)
@@ -427,12 +430,15 @@ class SSD300(tf.keras.Model):
                 filtered_scores.append(max_scores)
                 filtered_classes.append(category)
 
+                # update available boxes with boxes without overlap
                 cat_boxes = cat_boxes[not_iou]
                 cat_scores = cat_scores[not_iou]
 
         final_boxes = tf.convert_to_tensor(filtered_boxes, dtype=tf.float32)
         final_classes = tf.convert_to_tensor(filtered_classes, dtype=tf.int16)
         final_scores = tf.convert_to_tensor(filtered_scores, dtype=tf.float32)
+
+        # recursive call until no more overlap was found
         if boxes_origin.shape != final_boxes.shape:
             final_boxes, final_classes, final_scores = \
                 self.recursive_nms(final_boxes, final_classes, final_scores)
