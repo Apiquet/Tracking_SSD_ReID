@@ -392,8 +392,6 @@ class SSD300(tf.keras.Model):
             - (tf.Tensor) class for each box:  [F]
             - (tf.Tensor) scores for each box:  [F]
         """
-        if boxes_origin.shape[0] == 0:
-            return boxes_origin, classes_origin, scores_origin
         score_threshold_idx = scores_origin >= 0.01
         boxes = boxes_origin[score_threshold_idx]
         classes = classes_origin[score_threshold_idx]
