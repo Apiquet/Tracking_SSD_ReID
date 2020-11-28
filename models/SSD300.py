@@ -372,8 +372,9 @@ class SSD300(tf.keras.Model):
                             boxes_width_height_area - inter_area)
         return iou >= iou_threshold
 
-    def nms(self, boxes: tf.Tensor, classes: tf.Tensor,
-            scores: tf.Tensor):
+    def recursive_nms(self, boxes_origin: tf.Tensor,
+                      classes_origin: tf.Tensor,
+                      scores_origin: tf.Tensor):
         """
         Method to filter boxes with score < 0.01
         Get maximum 200 boxes per image
@@ -391,27 +392,30 @@ class SSD300(tf.keras.Model):
             - (tf.Tensor) class for each box:  [F]
             - (tf.Tensor) scores for each box:  [F]
         """
-        score_threshold_idx = scores >= 0.01
-        scores = scores[score_threshold_idx]
-        boxes = boxes[score_threshold_idx]
+        if boxes_origin.shape[0] == 0:
+            return boxes_origin, classes_origin, scores_origin
+        score_threshold_idx = scores_origin >= 0.01
+        boxes = boxes_origin[score_threshold_idx]
+        classes = classes_origin[score_threshold_idx]
+        scores = scores_origin[score_threshold_idx]
 
         rank = tf.argsort(scores, axis=0, direction='DESCENDING')
         rank_threshold_idx = rank <= 200
 
-        scores = scores[rank_threshold_idx]
-        classes = classes[rank_threshold_idx]
         boxes = boxes[rank_threshold_idx]
+        classes = classes[rank_threshold_idx]
+        scores = scores[rank_threshold_idx]
 
         filtered_boxes = []
-        filtered_scores = []
         filtered_classes = []
+        filtered_scores = []
         for category in tf.unique(classes)[0]:
             cat_idx = classes == category
             cat_boxes = boxes[cat_idx]
             cat_scores = scores[cat_idx]
 
             while cat_boxes.shape[0] != 0:
-                iou = self.computeJaccardIdx(cat_boxes[0], cat_boxes, 0.45)
+                iou = self.computeJaccardIdx(cat_boxes[0], cat_boxes, 0.3)
                 not_iou = tf.math.logical_not(iou)
 
                 overlap_scores = cat_scores[iou]
@@ -421,17 +425,21 @@ class SSD300(tf.keras.Model):
                                            (overlap_scores.shape[0], 4))
                 mean_box = tf.math.reduce_mean(overlap_boxes, axis=0)
                 filtered_boxes.append(mean_box)
-                scores = tf.math.reduce_max(overlap_scores, axis=0)
-                filtered_scores.append(scores)
+                max_scores = tf.math.reduce_max(overlap_scores, axis=0)
+                filtered_scores.append(max_scores)
                 filtered_classes.append(category)
 
                 cat_boxes = cat_boxes[not_iou]
                 cat_scores = cat_scores[not_iou]
-                    
 
-        return tf.convert_to_tensor(filtered_boxes, dtype=tf.float32),\
-            tf.convert_to_tensor(filtered_classes, dtype=tf.int16),\
-            tf.convert_to_tensor(filtered_scores, dtype=tf.float32)
+        final_boxes = tf.convert_to_tensor(filtered_boxes, dtype=tf.float32)
+        final_classes = tf.convert_to_tensor(filtered_classes, dtype=tf.int16)
+        final_scores = tf.convert_to_tensor(filtered_scores, dtype=tf.float32)
+        if boxes_origin.shape != final_boxes.shape:
+            final_boxes, final_classes, final_scores = \
+                self.recursive_nms(final_boxes, final_classes, final_scores)
+
+        return final_boxes, final_classes, final_scores
 
     def getPredictionsFromConfsLocs(self, confs_pred, locs_pred,
                                     score_threshold=0.2,

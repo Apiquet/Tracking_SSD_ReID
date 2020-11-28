@@ -145,6 +145,8 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         elif end_idx >= 0 and i > end_idx:
             break
         orig_height, orig_width = frame.shape[0], frame.shape[1]
+        line_width = int(0.003125 * orig_width)
+        font = ImageFont.truetype("arial.ttf", line_width*10)
         img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         img_ssd = tf.image.resize(np.array(img), (300, 300)) / 255.
         img_ssd = tf.convert_to_tensor(img_ssd, dtype=tf.float32)
@@ -159,19 +161,21 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                 score_threshold=score_threshold,
                 box_encoding="corner")
 
-        boxes, classes, scores = model.nms(boxes[0], classes[0], scores[0])
+        boxes, classes, scores = model.recursive_nms(boxes[0],
+                                                     classes[0],
+                                                     scores[0])
 
         draw = ImageDraw.Draw(img)
-        for b, box in enumerate(boxes[0]):
+        for b, box in enumerate(boxes):
             color = random.choice(COLORS)
             min_point = int(box[0] * orig_width), int(box[1] * orig_height)
             end_point = int(box[2] * orig_width), int(box[3] * orig_height)
-            draw.rectangle((min_point, end_point), outline=color)
+            draw.rectangle((min_point, end_point), outline=color,
+                           width=line_width)
             draw.text((min_point[0]+5, min_point[1]+5),
                       "{}: {:.02f}".format(
-                      list(db_manager.classes.keys())[classes[0][b]],
-                      scores[0][b]),
-                      fill=color)
+                      list(db_manager.classes.keys())[classes[b]],
+                      scores[b]), fill=color, font=font)
         imgs.append(img)
     imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
                  save_all=True, duration=100, loop=0)
