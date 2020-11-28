@@ -410,22 +410,27 @@ class SSD300(tf.keras.Model):
             cat_boxes = boxes[cat_idx]
             cat_scores = scores[cat_idx]
 
-            iou = self.computeJaccardIdx(cat_boxes[0], cat_boxes, 0.45)
-            overlap_scores = cat_scores[iou]
-            iou = tf.expand_dims(iou, 1)
-            iou = tf.repeat(iou, repeats=[4], axis=1)
-            overlap_boxes = tf.reshape(cat_boxes[iou],
-                                       (overlap_scores.shape[0], 4))
-            mean_box = tf.math.reduce_mean(overlap_boxes, axis=0,
-                                           keepdims=True)
-            filtered_boxes.append(mean_box)
-            scores = tf.math.reduce_max(overlap_scores, axis=0, keepdims=True)
-            filtered_scores.append(scores)
-            filtered_classes.append(category)
+            while cat_boxes.shape[0] != 0:
+                iou = self.computeJaccardIdx(cat_boxes[0], cat_boxes, 0.45)
+                not_iou = tf.math.logical_not(iou)
+
+                overlap_scores = cat_scores[iou]
+                iou = tf.expand_dims(iou, 1)
+                iou = tf.repeat(iou, repeats=[4], axis=1)
+                overlap_boxes = tf.reshape(cat_boxes[iou],
+                                           (overlap_scores.shape[0], 4))
+                mean_box = tf.math.reduce_mean(overlap_boxes, axis=0)
+                filtered_boxes.append(mean_box)
+                scores = tf.math.reduce_max(overlap_scores, axis=0)
+                filtered_scores.append(scores)
+                filtered_classes.append(category)
+
+                cat_boxes = cat_boxes[not_iou]
+                cat_scores = cat_scores[not_iou]
+                    
 
         return tf.convert_to_tensor(filtered_boxes, dtype=tf.float32),\
-            tf.expand_dims(tf.convert_to_tensor(filtered_classes,
-                                                dtype=tf.int16), 0),\
+            tf.convert_to_tensor(filtered_classes, dtype=tf.int16),\
             tf.convert_to_tensor(filtered_scores, dtype=tf.float32)
 
     def getPredictionsFromConfsLocs(self, confs_pred, locs_pred,
