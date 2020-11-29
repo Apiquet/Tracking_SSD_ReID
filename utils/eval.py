@@ -118,10 +118,11 @@ def pltPredGt(model, db_manager, images_names: str,
 
 def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                    score_threshold: float = 0.6, start_idx: int = 0,
-                   end_idx: int = -1):
+                   end_idx: int = -1, nms=True, skip=1):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
+    Infer SSD on each image in sequence, the next function is more optimized
 
     Args:
         - SSD300 class from models/SSD300.py
@@ -144,6 +145,8 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
             continue
         elif end_idx >= 0 and i > end_idx:
             break
+        if i % skip != 0:
+            continue
         orig_height, orig_width = frame.shape[0], frame.shape[1]
         line_width = int(0.003125 * orig_width)
         font = ImageFont.truetype("arial.ttf", line_width*10)
@@ -160,10 +163,12 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                 confs_pred, locs_pred,
                 score_threshold=score_threshold,
                 box_encoding="corner")
-
-        boxes, classes, scores = model.recursive_nms(boxes[0],
-                                                     classes[0],
-                                                     scores[0])
+        if nms:
+            boxes, classes, scores = model.recursive_nms(boxes[0],
+                                                         classes[0],
+                                                         scores[0])
+        else:
+            boxes, classes, scores = boxes[0], classes[0], scores[0]
 
         draw = ImageDraw.Draw(img)
         for b, box in enumerate(boxes):
@@ -179,3 +184,82 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         imgs.append(img)
     imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
                  save_all=True, duration=100, loop=0)
+
+
+def pltPredOnVideoOneSSDCall(
+        model, db_manager, video_path: str, out_gif: str,
+        score_threshold: float = 0.6, start_idx: int = 0,
+        end_idx: int = -1, nms=True, skip=1):
+    """
+    Method to infer a model on a MP4 video
+    Create a gif with drawn boxes, classes and confidence
+    Load all images and infer SSD once
+
+    Args:
+        - SSD300 class from models/SSD300.py
+        - VOC2012ManagerObjDetection class from data/
+        - (str) video path (MP4)
+        - (str) video path (MP4)
+        - (float) score threshold to draw a box
+        - (int) start frame idx, default is 0
+        - (int) end frame idx, default is -1
+    """
+    cap = cv2.VideoCapture(video_path)
+    pil_imgs = []
+    tf_imgs = []
+    gif_imgs = []
+    i = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        i += 1
+        if i <= start_idx:
+            continue
+        elif end_idx >= 0 and i > end_idx:
+            break
+        if i % skip != 0:
+            continue
+        img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        img_ssd = tf.image.resize(np.array(img), (300, 300)) / 255.
+        img_ssd = tf.convert_to_tensor(img_ssd, dtype=tf.float32)
+        pil_imgs.append(img)
+        tf_imgs.append(img_ssd)
+
+    tf_imgs = tf.convert_to_tensor(tf_imgs, dtype=tf.float32)
+    confs, locs = model(tf_imgs)
+    confs_pred = tf.concat(confs, axis=1)
+    locs_pred = tf.concat(locs, axis=1)
+    confs_pred = tf.math.softmax(confs_pred, axis=2)
+    boxes_pred, classes_pred, scores_pred = model.getPredictionsFromConfsLocs(
+        confs_pred, locs_pred,
+        score_threshold=score_threshold,
+        box_encoding="corner")
+
+    orig_height, orig_width = frame.shape[0], frame.shape[1]
+    line_width = int(0.003125 * orig_width)
+    font = ImageFont.truetype("arial.ttf", line_width*10)
+
+    for i, img in enumerate(pil_imgs):
+        if nms:
+            boxes, classes, scores = model.recursive_nms(boxes_pred[i],
+                                                         classes_pred[i],
+                                                         scores_pred[i])
+        else:
+            boxes, classes, scores = \
+                boxes_pred[i], classes_pred[i], scores_pred[i]
+
+        draw = ImageDraw.Draw(img)
+        for b, box in enumerate(boxes):
+            color = random.choice(COLORS)
+            min_point = int(box[0] * orig_width), int(box[1] * orig_height)
+            end_point = int(box[2] * orig_width), int(box[3] * orig_height)
+            draw.rectangle((min_point, end_point), outline=color,
+                           width=line_width)
+            draw.text((min_point[0]+5, min_point[1]+5),
+                      "{}: {:.02f}".format(
+                      list(db_manager.classes.keys())[classes[b]],
+                      scores[b]), fill=color, font=font)
+        gif_imgs.append(img)
+    gif_imgs[0].save(out_gif, format='GIF', append_images=gif_imgs[1:],
+                     save_all=True, duration=100, loop=0)
