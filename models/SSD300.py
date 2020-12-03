@@ -203,44 +203,79 @@ class SSD300(tf.keras.Model):
             self.stage_11_1_128,
             self.stage_11_2_256])
 
-    def getModel(self):
-        """ Method to get the full SSD architecture """
+    def getModel(self, output="concat"):
+        """ Method to get the full SSD architecture
+
+        Args:
+            - (str) outputs for the model:
+                'cone' for VGG+cone,
+                'confloc' before concatenation,
+                'concat' after concatenation
+
+        """
         inputs = Input(shape=(300, 300, 3))
 
         # stage 4
         x = self.VGG16_stage_4(inputs)
         x_normed = self.stage_4_batch_norm(x)
         conf4, loc4 = self.stage_4_conf(x_normed), self.stage_4_loc(x_normed)
+        conf4_tmp = tf.reshape(conf4, [-1, self.stage_4_boxes.shape[0],
+                                       self.num_categories])
+        loc4_tmp = tf.reshape(loc4, [-1, self.stage_4_boxes.shape[0], 4])
 
         # stage 7
         x = self.VGG16_stage_5(x)
         x = self.stage_6_1_1024(x)
         x = self.stage_7_1_1024(x)
         conf7, loc7 = self.stage_7_conf(x), self.stage_7_loc(x)
+        conf7_tmp = tf.reshape(conf7, [-1, self.stage_7_boxes.shape[0],
+                                       self.num_categories])
+        loc7_tmp = tf.reshape(loc7, [-1, self.stage_7_boxes.shape[0], 4])
 
         # stage 8
         x = self.stage_8_1_256(x)
         x = self.stage_8_2_512(x)
         conf8, loc8 = self.stage_8_conf(x), self.stage_8_loc(x)
+        conf8_tmp = tf.reshape(conf8, [-1, self.stage_8_boxes.shape[0],
+                                       self.num_categories])
+        loc8_tmp = tf.reshape(loc8, [-1, self.stage_8_boxes.shape[0], 4])
 
         # stage 9
         x = self.stage_9_1_128(x)
         x = self.stage_9_2_256(x)
         conf9, loc9 = self.stage_9_conf(x), self.stage_9_loc(x)
+        conf9_tmp = tf.reshape(conf9, [-1, self.stage_9_boxes.shape[0],
+                                       self.num_categories])
+        loc9_tmp = tf.reshape(loc9, [-1, self.stage_9_boxes.shape[0], 4])
 
         # stage 10
         x = self.stage_10_1_128(x)
         x = self.stage_10_2_256(x)
         conf10, loc10 = self.stage_10_conf(x), self.stage_10_loc(x)
+        conf10_tmp = tf.reshape(conf10, [-1, self.stage_10_boxes.shape[0],
+                                         self.num_categories])
+        loc10_tmp = tf.reshape(loc10, [-1, self.stage_10_boxes.shape[0], 4])
 
         # stage 11
         x = self.stage_11_1_128(x)
         x = self.stage_11_2_256(x)
         conf11, loc11 = self.stage_11_conf(x), self.stage_11_loc(x)
-        return tf.keras.Model(inputs=inputs, outputs=[conf4, loc4, conf7,
-                                                      loc7, conf8, loc8,
-                                                      conf9, loc9, conf10,
-                                                      loc10, conf11, loc11])
+        conf11_tmp = tf.reshape(conf11, [-1, self.stage_11_boxes.shape[0],
+                                         self.num_categories])
+        loc11_tmp = tf.reshape(loc11, [-1, self.stage_11_boxes.shape[0], 4])
+
+        conf = [conf4_tmp, conf7_tmp, conf8_tmp,
+                conf9_tmp, conf10_tmp, conf11_tmp]
+        loc = [loc4_tmp, loc7_tmp, loc8_tmp, loc9_tmp, loc10_tmp, loc11_tmp]
+        conf_concat = tf.keras.layers.Concatenate(axis=1)(conf)
+        loc_concat = tf.keras.layers.Concatenate(axis=1)(loc)
+        if output == "cone":
+            outputs = [x]
+        elif output == "confloc":
+            outputs = [conf, loc]
+        elif output == "concat":
+            outputs = [conf_concat, loc_concat]
+        return tf.keras.Model(inputs=inputs, outputs=outputs)
 
     def load_vgg16_imagenet_weights(self):
         """ Use pretrained weights from imagenet """
