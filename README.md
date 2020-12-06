@@ -28,9 +28,9 @@ Full explanation of this code here: https://apiquet.com/2020/11/07/ssd300-implem
 * Non-maximum suppression is added to produce final detection
 * VGG-16 is used as base network for high quality image classification
 * Auxiliary structure is then added to produce detections with:
-	* Multi-scale feature maps: layers that decrease in size progressively (for multi-scale detection)
-	* Convolutional predictor: each feature map can produce a fixed set of detection using a set of convolutional filters. For a feature layer of nxm with p channels, the basic element for predicting parameters of a detection is 3x3xp small kernel that produce a score for a category, or a shape of offset relative to the default box. At each of the mxn location where the kernel is applied, it produces an output value
-	* Default boxes: the set of default bounding boxes is fixed in position. At each feature map, offsets are calculated relative to the default box shapes. So, as we have 4 offsets (center cx, cy and with/height) and a confidence for c classes, it leads to (c+4)*kmn outputs for mxn feature map with k the number of groundtruth.
+    * Multi-scale feature maps: layers that decrease in size progressively (for multi-scale detection)
+    * Convolutional predictor: each feature map can produce a fixed set of detection using a set of convolutional filters. For a feature layer of nxm with p channels, the basic element for predicting parameters of a detection is 3x3xp small kernel that produce a score for a category, or a shape of offset relative to the default box. At each of the mxn location where the kernel is applied, it produces an output value
+    * Default boxes: the set of default bounding boxes is fixed in position. At each feature map, offsets are calculated relative to the default box shapes. So, as we have 4 offsets (center cx, cy and with/height) and a confidence for c classes, it leads to (c+4)*kmn outputs for mxn feature map with k the number of groundtruth.
 
 ## Training
 
