@@ -60,4 +60,4 @@ Full explanation of this code here: https://apiquet.com/2020/11/07/ssd300-implem
 
 ## Final model explanation
 
-![SSD300](model/model_expand_concat_explained.png)
+![SSD300](models/model_expand_concat_explained.png)
