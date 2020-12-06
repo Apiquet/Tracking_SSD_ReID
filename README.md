@@ -2,6 +2,7 @@
  
 SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxiv.org/pdf/1512.02325.pdf) and [official code](https://github.com/weiliu89/caffe/tree/ssd) (29 Dec 2016)
 
+Full explanation of this code here: https://apiquet.com/2020/11/07/ssd300-implementation/
 
 ## Overview
 
@@ -57,14 +58,6 @@ SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxi
 * Each sampled patch is resized to fixed size and horizontally flipped with probability=0.5
 * Other photo-metric distortions is applied
 
-## Implementation
+## Final model explanation
 
-models/VGG16.py implements the backbone of SSD300
-models/SSD300.py contains the SSD300 class
-
-## Training
-
-VGG16 test on animals, person and vehicle with the [PASCAL VOC2012 dataset](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/index.html#devkit)
-The following categories are converted to the animal class: bird, cat, cow, dog, horse, sheep
-The following categories are converted to the vehicle class: aeroplane, bicycle, boat, bus, car, motorbike, train
-All other categories are converted to negatives: bottle, chair, dining table, potted plant, sofa, tv/monitor
+![SSD300](model/model_expand_concat_explained.png)
