@@ -185,11 +185,16 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
     imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
                  save_all=True, duration=100, loop=0)
 
+def draw_underlined_text(draw, pos, text, font, **options):    
+    twidth, theight = draw.textsize(text, font=font)
+    lx, ly = pos[0], pos[1] + theight
+    draw.text(pos, text, font=font, **options)
+    draw.line((lx, ly, lx + twidth, ly), **options)
 
 def pltPredOnVideoOneSSDCall(
         model, db_manager, video_path: str, out_gif: str,
         score_threshold: float = 0.6, start_idx: int = 0,
-        end_idx: int = -1, nms=True, skip=1):
+        end_idx: int = -1, nms=True, skip=1, tracker=None):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
@@ -248,6 +253,8 @@ def pltPredOnVideoOneSSDCall(
         else:
             boxes, classes, scores = \
                 boxes_pred[i], classes_pred[i], scores_pred[i]
+        if tracker:
+            identity = tracker(classes_pred[i], boxes_pred[i])
 
         draw = ImageDraw.Draw(img)
         for b, box in enumerate(boxes):
@@ -256,10 +263,11 @@ def pltPredOnVideoOneSSDCall(
             end_point = int(box[2] * orig_width), int(box[3] * orig_height)
             draw.rectangle((min_point, end_point), outline=color,
                            width=line_width)
-            draw.text((min_point[0]+5, min_point[1]+5),
-                      "{}: {:.02f}".format(
-                      list(db_manager.classes.keys())[classes[b]],
-                      scores[b]), fill=color, font=font)
+            text = "{}: {:.02f}".format(
+                list(db_manager.classes.keys())[classes[b]], scores[b])
+            if tracker:
+                text += f", ID: {identity[b]}"
+            draw_underlined_text(draw, (min_point[0]+2, min_point[1]-10), text, font, fill=color)
         gif_imgs.append(img)
     gif_imgs[0].save(out_gif, format='GIF', append_images=gif_imgs[1:],
                      save_all=True, duration=100, loop=0)
