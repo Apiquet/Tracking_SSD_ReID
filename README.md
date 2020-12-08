@@ -40,7 +40,7 @@ Full explanation of this code here: https://apiquet.com/2020/11/07/ssd300-implem
 * Matching strategy: must determine which default boxes correspond to the ground truth one. This selection starts with the best jaccard overlap, then all boxes with a jaccard overlap > 0.5. This simplifies the learning problem, allowing the network to predict high scores for multiple overlapping default boxes rather than requiring to pick only the one with maximum overlap.
 * The loss is the weighted sum of localization loss and confidence loss with N the number of matched default boxes:
 
-<img src="https://latex.codecogs.com/svg.latex?\Large&space;L{global}=\frac{1}{N}(L{conf}+a.L{loc}" title="\Large L{global}=\frac{1}{N}(L{conf}+a.L{loc})" />
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;L{global}=\frac{1}{N}(L{conf}+a.L{loc})" title="\Large L{global}=\frac{1}{N}(L{conf}+a.L{loc})" />
 
 * If N=0, Lglobal = 0
 * Lloc is a smooth L1 between predicted box and the ground truth (for center cx,cy and width/height)

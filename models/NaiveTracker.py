@@ -22,7 +22,8 @@ class _subjectTracked():
         # bool to know if subject was seen in the current frame
         self.seen = False
         # subject id
-        self.identity = -1
+        self.identity = identity
+
 
 class NaiveTracker():
 
@@ -36,6 +37,15 @@ class NaiveTracker():
     def setSeenAttribute(self, value=False):
         for subject in self.subjects:
             subject.seen = value
+
+    def clearSubjects(self):
+        keep = []
+        for subject in self.subjects:
+            if subject.seen <= 5:
+                keep.append(True)
+            else:
+                keep.append(False)
+        self.subjects = [i for (i, v) in zip(self.subjects, keep) if v]
 
     def computeJaccardIdx(self, ref_box: tf.Tensor, boxes: tf.Tensor,
                           iou_threshold: float):
@@ -101,6 +111,7 @@ class NaiveTracker():
             - (tf.Tensor) Identity for each subject (N,)
         """
         self.setSeenAttribute(False)
+        self.clearSubjects()
         identity = np.zeros(categories.shape) * -1
         iou = np.zeros(categories.shape)
         iou_bin_masks = []
@@ -108,22 +119,22 @@ class NaiveTracker():
             cat_idx = categories == category
 
             for subject in self.subjects:
-                iou = self.computeJaccardIdx(subject.loc, boxes, 0.3)
+                if subject.category != category:
+                    continue
+                iou = self.computeJaccardIdx(subject.loc, boxes, 0.1)
                 iou = tf.math.logical_and(iou, cat_idx)
                 iou = tf.dtypes.cast(iou, tf.int16)
                 if tf.reduce_sum(iou, axis=0) != 0:
-
                     subject.seen = True
-                    identity[iou.numpy()] = subject.identity
-                    
-                    for mask in iou_bin_masks:
-                        iou = tf.clip_by_value(iou - mask, 0, 1)
+                    subject.lifespan = 0
+                    identity[iou.numpy() == 1] = subject.identity
                     iou_bin_masks.append(iou)
-
         for subject in self.subjects:
-            if subject.seen == False:
+            if subject.seen is False:
                 subject.lifespan += 1
 
+        for mask in iou_bin_masks:
+            iou = tf.clip_by_value(mask + iou, 0, 1)
         for i, box in enumerate(boxes):
             if not iou[i]:
                 self.max_id += 1
