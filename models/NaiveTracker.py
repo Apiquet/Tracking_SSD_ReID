@@ -111,30 +111,38 @@ class NaiveTracker():
             - (tf.Tensor) Identity for each subject (N,)
         """
         self.setSeenAttribute(False)
+
+        # remove subject with lifespan > threshold
         self.clearSubjects()
         identity = np.zeros(categories.shape) * -1
         iou = np.zeros(categories.shape)
         iou_bin_masks = []
+
+        # loop over the categories
         for category in tf.unique(categories)[0]:
             cat_idx = categories == category
 
             for subject in self.subjects:
+                # no need to compute IoU is subject has a different class
                 if subject.category != category:
                     continue
-                iou = self.computeJaccardIdx(subject.loc, boxes, 0.1)
+                iou = self.computeJaccardIdx(subject.loc, boxes, 0.15)
                 iou = tf.math.logical_and(iou, cat_idx)
                 iou = tf.dtypes.cast(iou, tf.int16)
+                # give subject's id to boxes with IoU > 0.15
                 if tf.reduce_sum(iou, axis=0) != 0:
                     subject.seen = True
                     subject.lifespan = 0
                     identity[iou.numpy() == 1] = subject.identity
                     iou_bin_masks.append(iou)
+        # increase lifespan for any subject that was not seen
         for subject in self.subjects:
             if subject.seen is False:
                 subject.lifespan += 1
-
+        # boxes that got an id will have its idx = 1
         for mask in iou_bin_masks:
             iou = tf.clip_by_value(mask + iou, 0, 1)
+        # create a new subject for each box that did not get an id
         for i, box in enumerate(boxes):
             if not iou[i]:
                 self.max_id += 1
