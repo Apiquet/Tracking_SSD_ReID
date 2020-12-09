@@ -96,7 +96,7 @@ class NaiveTracker():
         # compute iou
         iou = inter_area / (ref_box_width_height_area +
                             boxes_width_height_area - inter_area)
-        return iou >= iou_threshold
+        return iou >= iou_threshold, iou
 
     def __call__(self, categories, boxes):
         """
@@ -114,9 +114,7 @@ class NaiveTracker():
 
         # remove subject with lifespan > threshold
         self.clearSubjects()
-        identity = np.zeros(categories.shape) * -1
-        iou = np.zeros(categories.shape)
-        iou_bin_masks = []
+        identity = np.ones(categories.shape) * -1
 
         # loop over the categories
         for category in tf.unique(categories)[0]:
@@ -126,25 +124,24 @@ class NaiveTracker():
                 # no need to compute IoU is subject has a different class
                 if subject.category != category:
                     continue
-                iou = self.computeJaccardIdx(subject.loc, boxes, 0.15)
+                iou, values = self.computeJaccardIdx(subject.loc, boxes, 0.3)
                 iou = tf.math.logical_and(iou, cat_idx)
                 iou = tf.dtypes.cast(iou, tf.int16)
-                # give subject's id to boxes with IoU > 0.15
+                # verify if at least a box has and IoU >= 0.3
                 if tf.reduce_sum(iou, axis=0) != 0:
                     subject.seen = True
+                    # give subject's id to box with max IoU score
+                    idx_max_iou = values.numpy().argmax(axis=0)
+                    subject.loc = boxes[idx_max_iou]
                     subject.lifespan = 0
-                    identity[iou.numpy() == 1] = subject.identity
-                    iou_bin_masks.append(iou)
+                    identity[idx_max_iou] = subject.identity
         # increase lifespan for any subject that was not seen
         for subject in self.subjects:
             if subject.seen is False:
                 subject.lifespan += 1
-        # boxes that got an id will have its idx = 1
-        for mask in iou_bin_masks:
-            iou = tf.clip_by_value(mask + iou, 0, 1)
         # create a new subject for each box that did not get an id
         for i, box in enumerate(boxes):
-            if not iou[i]:
+            if identity[i] == -1:
                 self.max_id += 1
                 new_subject = _subjectTracked(categories[i], box, self.max_id)
                 self.subjects.append(new_subject)

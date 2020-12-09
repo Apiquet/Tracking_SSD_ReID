@@ -7,6 +7,7 @@ Function to train SSD
 
 import cv2
 from glob import glob
+import imageio
 from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
@@ -16,9 +17,9 @@ from tqdm import tqdm
 
 
 nb_colors = 100
-COLORS = [(random.randint(0, 255),
-           random.randint(0, 255),
-           random.randint(0, 255)) for i in range(nb_colors)]
+COLORS = [(random.randint(50, 200),
+           random.randint(50, 200),
+           random.randint(50, 200)) for i in range(nb_colors)]
 
 
 def pltPredOnImg(img, boxes, classes, scores, db_manager):
@@ -118,7 +119,8 @@ def pltPredGt(model, db_manager, images_names: str,
 
 def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                    score_threshold: float = 0.6, start_idx: int = 0,
-                   end_idx: int = -1, nms=True, skip=1, tracker=None):
+                   end_idx: int = -1, nms=True, skip=1, tracker=None,
+                   resize=None, fps=30):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
@@ -136,7 +138,10 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
     cap = cv2.VideoCapture(video_path)
     imgs = []
     i = 0
-    while True:
+    number_of_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if end_idx != -1:
+        number_of_frame = end_idx
+    for _ in tqdm(range(number_of_frame)):
         ret, frame = cap.read()
         if not ret:
             break
@@ -147,13 +152,17 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
             break
         if i % skip != 0:
             continue
-        orig_height, orig_width = frame.shape[0], frame.shape[1]
-        line_width = int(0.003125 * orig_width)
-        font = ImageFont.truetype("arial.ttf", line_width*10)
         img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         img_ssd = tf.image.resize(np.array(img), (300, 300)) / 255.
         img_ssd = tf.convert_to_tensor(img_ssd, dtype=tf.float32)
         img_ssd = tf.expand_dims(img_ssd, 0)
+
+        if resize:
+            img.thumbnail(resize, Image.ANTIALIAS)
+        orig_height, orig_width = img.size[1], img.size[0]
+        line_width = int(0.006 * orig_width)
+        font = ImageFont.truetype("arial.ttf", line_width*10)
+
         confs, locs = model(img_ssd)
         confs_pred = tf.concat(confs, axis=1)
         locs_pred = tf.concat(locs, axis=1)
@@ -183,105 +192,20 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                            width=line_width)
             text = "{}: {:.02f}".format(
                 list(db_manager.classes.keys())[classes[b]], scores[b])
+            draw_underlined_text(draw, (min_point[0]+5, min_point[1]+2), text,
+                                 font, fill=color, line_width=line_width)
             if tracker:
-                text += f", ID: {identity[b]}"
-            draw_underlined_text(draw, (min_point[0]+2, min_point[1]-10),
-                                 text, font, fill=color)
+                draw.text((min_point[0]+1, min_point[1]-22),
+                          f"ID: {identity[b]}", font=font, fill=color)
         imgs.append(img)
     imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
-                 save_all=True, duration=100, loop=0)
+                 save_all=True, loop=0)
+    gif = imageio.mimread(out_gif)
+    imageio.mimsave(out_gif, gif, fps=fps)
 
 
-def draw_underlined_text(draw, pos, text, font, color, line_width=2):
+def draw_underlined_text(draw, pos, text, font, fill, line_width=2):
     twidth, theight = draw.textsize(text, font=font)
     lx, ly = pos[0], pos[1] + theight
-    draw.text(pos, text, font=font, fill=color)
-    draw.line((lx, ly, lx + twidth, ly), fill=color, width=line_width)
-
-
-def pltPredOnVideoOneSSDCall(
-        model, db_manager, video_path: str, out_gif: str,
-        score_threshold: float = 0.6, start_idx: int = 0,
-        end_idx: int = -1, nms=True, skip=1, tracker=None, resize=None):
-    """
-    Method to infer a model on a MP4 video
-    Create a gif with drawn boxes, classes and confidence
-    Load all images and infer SSD once
-
-    Args:
-        - SSD300 class from models/SSD300.py
-        - VOC2012ManagerObjDetection class from data/
-        - (str) video path (MP4)
-        - (str) video path (MP4)
-        - (float) score threshold to draw a box
-        - (int) start frame idx, default is 0
-        - (int) end frame idx, default is -1
-    """
-    cap = cv2.VideoCapture(video_path)
-    pil_imgs = []
-    tf_imgs = []
-    gif_imgs = []
-    i = 0
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        i += 1
-        if i <= start_idx:
-            continue
-        elif end_idx >= 0 and i > end_idx:
-            break
-        if i % skip != 0:
-            continue
-        img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        img_ssd = tf.image.resize(np.array(img), (300, 300)) / 255.
-        img_ssd = tf.convert_to_tensor(img_ssd, dtype=tf.float32)
-        if resize:
-            img.thumbnail(resize, Image.ANTIALIAS)
-        pil_imgs.append(img)
-        tf_imgs.append(img_ssd)
-
-    tf_imgs = tf.convert_to_tensor(tf_imgs, dtype=tf.float32)
-    confs, locs = model(tf_imgs)
-    confs_pred = tf.concat(confs, axis=1)
-    locs_pred = tf.concat(locs, axis=1)
-    confs_pred = tf.math.softmax(confs_pred, axis=2)
-    boxes_pred, classes_pred, scores_pred = model.getPredictionsFromConfsLocs(
-        confs_pred, locs_pred,
-        score_threshold=score_threshold,
-        box_encoding="corner")
-
-    orig_height, orig_width = img.size[1], img.size[0]
-    line_width = int(0.008 * orig_width)
-    font = ImageFont.truetype("arial.ttf", line_width*6)
-
-    for i, img in enumerate(tqdm(pil_imgs)):
-        if nms:
-            boxes, classes, scores = model.recursive_nms(boxes_pred[i],
-                                                         classes_pred[i],
-                                                         scores_pred[i])
-        else:
-            boxes, classes, scores = \
-                boxes_pred[i], classes_pred[i], scores_pred[i]
-        if tracker:
-            identity = tracker(classes, boxes)
-
-        draw = ImageDraw.Draw(img)
-        for b, box in enumerate(boxes):
-            if tracker:
-                color = random.seed(identity.numpy()[b])
-            color = random.choice(COLORS)
-            min_point = int(box[0] * orig_width), int(box[1] * orig_height)
-            end_point = int(box[2] * orig_width), int(box[3] * orig_height)
-            draw.rectangle((min_point, end_point), outline=color,
-                           width=line_width)
-            text = "{}: {:.02f}".format(
-                list(db_manager.classes.keys())[classes[b]], scores[b])
-            draw_underlined_text(draw, (min_point[0]+5, min_point[1]+2), text,
-                                 font, color=color, line_width=line_width)
-            if tracker:
-                draw.text((min_point[0]+1, min_point[1]-18),
-                          f"ID: {identity[b]}", font=font, fill=color)
-        gif_imgs.append(img)
-    gif_imgs[0].save(out_gif, format='GIF', append_images=gif_imgs[1:],
-                     save_all=True, duration=100, loop=0)
+    draw.text(pos, text, font=font, fill=fill)
+    draw.line((lx, ly, lx + twidth, ly), fill=fill, width=line_width)
