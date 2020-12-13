@@ -275,6 +275,8 @@ class SSD300(tf.keras.Model):
             outputs = [conf, loc]
         elif output == "concat":
             outputs = [conf_concat, loc_concat]
+        elif output == "conf_concat":
+            outputs = [conf_concat, loc]
         return tf.keras.Model(inputs=inputs, outputs=outputs)
 
     def load_vgg16_imagenet_weights(self):
