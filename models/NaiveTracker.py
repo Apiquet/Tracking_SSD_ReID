@@ -41,7 +41,7 @@ class NaiveTracker():
     def clearSubjects(self):
         keep = []
         for subject in self.subjects:
-            if subject.seen <= 5:
+            if subject.seen <= 10:
                 keep.append(True)
             else:
                 keep.append(False)

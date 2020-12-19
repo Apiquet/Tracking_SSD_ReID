@@ -184,7 +184,7 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         draw = ImageDraw.Draw(img)
         for b, box in enumerate(boxes):
             if tracker:
-                color = random.seed(identity.numpy()[b])
+                color = random.seed(identity.numpy()[b] * 10)
             color = random.choice(COLORS)
             min_point = int(box[0] * orig_width), int(box[1] * orig_height)
             end_point = int(box[2] * orig_width), int(box[3] * orig_height)
@@ -209,3 +209,91 @@ def draw_underlined_text(draw, pos, text, font, fill, line_width=2):
     lx, ly = pos[0], pos[1] + theight
     draw.text(pos, text, font=font, fill=fill)
     draw.line((lx, ly, lx + twidth, ly), fill=fill, width=line_width)
+
+
+def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
+                        score_threshold: float = 0.6, start_idx: int = 0,
+                        end_idx: int = -1, nms=True, skip=1, tracker=None,
+                        resize=None, fps=30, input_shape=(640, 640)):
+    """
+    Method to infer a model on a MP4 video
+    Create a gif with drawn boxes, classes and confidence
+    Infer SSD on each image in sequence, the next function is more optimized
+
+    Args:
+        - SSD640 from tfhub.dev/tensorflow/ssd_mobilenet_v2/fpnlite_640x640/1
+        - (str) video path (MP4)
+        - (str) video path (MP4)
+        - (float) score threshold to draw a box
+        - (int) start frame idx, default is 0
+        - (int) end frame idx, default is -1
+    """
+    cap = cv2.VideoCapture(video_path)
+    imgs = []
+    i = 0
+    number_of_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if end_idx != -1:
+        number_of_frame = end_idx
+    for _ in tqdm(range(number_of_frame)):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        i += 1
+        if i <= start_idx:
+            continue
+        elif end_idx >= 0 and i > end_idx:
+            break
+        if i % skip != 0:
+            continue
+        img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+        if resize:
+            img.thumbnail(resize, Image.ANTIALIAS)
+        orig_height, orig_width = img.size[1], img.size[0]
+        line_width = int(0.006 * orig_width)
+        font = ImageFont.truetype("arial.ttf", line_width*10)
+
+        img_ssd = tf.image.resize(np.array(img), input_shape)
+        img_ssd = tf.convert_to_tensor(img_ssd, dtype=tf.float32)/255.
+
+        img_ssd  = tf.image.convert_image_dtype(
+            img_ssd, tf.float32 )[tf.newaxis, ...]
+        result = model(img_ssd)
+        result = {key:value.numpy() for key,value in result.items()}
+
+        scores_tokeep = result["detection_scores"] > score_threshold
+
+        boxes = result["detection_boxes"][scores_tokeep]
+        boxes_shape = boxes.shape
+        boxes = tf.concat([[boxes[:, 1]], [boxes[:, 0]],
+                           [boxes[:, 3]], [boxes[:, 2]]],
+                           axis=0)
+        boxes = tf.transpose(boxes)
+
+        classes = result["detection_class_labels"][scores_tokeep]
+        classes_name = result["detection_class_entities"][scores_tokeep]
+        scores = result["detection_scores"][scores_tokeep]
+
+        if tracker:
+            identity = tracker(classes, boxes)
+
+        draw = ImageDraw.Draw(img)
+        for b, box in enumerate(boxes):
+            if tracker:
+                color = random.seed(identity.numpy()[b])
+            color = random.choice(COLORS)
+            min_point = int(box[0] * orig_width), int(box[1] * orig_height)
+            end_point = int(box[2] * orig_width), int(box[3] * orig_height)
+            draw.rectangle((min_point, end_point), outline=color,
+                           width=line_width)
+            text = "{}: {:.02f}".format(classes_name[b].decode("ascii"), scores[b])
+            draw_underlined_text(draw, (min_point[0]+5, min_point[1]+2), text,
+                                 font, fill=color, line_width=line_width)
+            if tracker:
+                draw.text((min_point[0]+1, min_point[1]-22),
+                          f"ID: {identity[b]}", font=font, fill=color)
+        imgs.append(img)
+    imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
+                 save_all=True, loop=0)
+    gif = imageio.mimread(out_gif)
+    imageio.mimsave(out_gif, gif, fps=fps)
