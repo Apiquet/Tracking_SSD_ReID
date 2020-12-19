@@ -5,7 +5,6 @@
 VOC2012 preprocessing to speed up training
 """
 import sys
-sys.path.insert(1, '../')
 
 from .VOC2012ManagerObjDetection import VOC2012ManagerObjDetection
 from models.SSD300 import SSD300
@@ -15,6 +14,8 @@ from tqdm import tqdm
 
 from glob import glob
 import tensorflow as tf
+
+sys.path.insert(1, '../')
 
 
 def saveGTdata(voc2012path, output_path):

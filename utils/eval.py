@@ -171,7 +171,7 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         boxes, classes, scores = model.getPredictionsFromConfsLocs(
                 confs_pred, locs_pred,
                 score_threshold=score_threshold,
-                box_encoding="corner")
+                box_encoding="center")
         if nms:
             boxes, classes, scores = model.recursive_nms(boxes[0],
                                                          classes[0],
@@ -186,6 +186,9 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
             if tracker:
                 color = random.seed(identity.numpy()[b] * 10)
             color = random.choice(COLORS)
+            box = tf.concat([box[:2] - box[2:] / 2,
+                             box[:2] + box[2:] / 2], axis=-1)
+
             min_point = int(box[0] * orig_width), int(box[1] * orig_height)
             end_point = int(box[2] * orig_width), int(box[3] * orig_height)
             draw.rectangle((min_point, end_point), outline=color,
@@ -213,7 +216,7 @@ def draw_underlined_text(draw, pos, text, font, fill, line_width=2):
 
 def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
                         score_threshold: float = 0.6, start_idx: int = 0,
-                        end_idx: int = -1, nms=True, skip=1, tracker=None,
+                        end_idx: int = -1, skip=1, tracker=None,
                         resize=None, fps=30, input_shape=(640, 640)):
     """
     Method to infer a model on a MP4 video
@@ -256,19 +259,23 @@ def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
         img_ssd = tf.image.resize(np.array(img), input_shape)
         img_ssd = tf.convert_to_tensor(img_ssd, dtype=tf.float32)/255.
 
-        img_ssd  = tf.image.convert_image_dtype(
-            img_ssd, tf.float32 )[tf.newaxis, ...]
+        img_ssd = tf.image.convert_image_dtype(
+            img_ssd, tf.float32)[tf.newaxis, ...]
         result = model(img_ssd)
-        result = {key:value.numpy() for key,value in result.items()}
+        result = {key: value.numpy() for key, value in result.items()}
 
         scores_tokeep = result["detection_scores"] > score_threshold
 
         boxes = result["detection_boxes"][scores_tokeep]
-        boxes_shape = boxes.shape
+
         boxes = tf.concat([[boxes[:, 1]], [boxes[:, 0]],
                            [boxes[:, 3]], [boxes[:, 2]]],
-                           axis=0)
+                          axis=0)
         boxes = tf.transpose(boxes)
+
+        boxes = tf.concat([
+            (boxes[:, :2] + boxes[:, 2:]) / 2,
+            boxes[:, 2:] - boxes[:, :2]], axis=-1)
 
         classes = result["detection_class_labels"][scores_tokeep]
         classes_name = result["detection_class_entities"][scores_tokeep]
@@ -282,11 +289,14 @@ def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
             if tracker:
                 color = random.seed(identity.numpy()[b])
             color = random.choice(COLORS)
+            box = tf.concat([box[:2] - box[2:] / 2,
+                             box[:2] + box[2:] / 2], axis=-1)
             min_point = int(box[0] * orig_width), int(box[1] * orig_height)
             end_point = int(box[2] * orig_width), int(box[3] * orig_height)
             draw.rectangle((min_point, end_point), outline=color,
                            width=line_width)
-            text = "{}: {:.02f}".format(classes_name[b].decode("ascii"), scores[b])
+            text = "{}: {:.02f}".format(classes_name[b].decode("ascii"),
+                                        scores[b])
             draw_underlined_text(draw, (min_point[0]+5, min_point[1]+2), text,
                                  font, fill=color, line_width=line_width)
             if tracker:

@@ -11,7 +11,7 @@ import tensorflow as tf
 
 class _subjectTracked():
 
-    def __init__(self, category: int, loc: tf.Tensor, identity: int):
+    def __init__(self, category: tf.int64, loc: tf.Tensor, identity: int):
         super(_subjectTracked, self).__init__()
         # object class
         self.category = category
@@ -120,13 +120,14 @@ class NaiveTracker():
         for category in tf.unique(categories)[0]:
             cat_idx = categories == category
 
-            for subject in self.subjects:
+            for subject in reversed(self.subjects):
                 # no need to compute IoU is subject has a different class
                 if subject.category != category:
                     continue
                 iou, values = self.computeJaccardIdx(subject.loc, boxes, 0.3)
                 iou = tf.math.logical_and(iou, cat_idx)
-                iou = tf.dtypes.cast(iou, tf.int16)
+                iou = tf.dtypes.cast(iou, tf.float32)
+                values = values * iou
                 # verify if at least a box has and IoU >= 0.3
                 if tf.reduce_sum(iou, axis=0) != 0:
                     subject.seen = True

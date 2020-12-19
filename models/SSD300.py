@@ -463,12 +463,12 @@ class SSD300(tf.keras.Model):
         F = number of non filtered boxes
 
         Args:
-            - (tf.Tensor) boxes predicted: [N boxes, 4]
+            - (tf.Tensor) boxes predicted: [N boxes, 4] (cx, cy, w, h)
             - (tf.Tensor) classes of each box:  [N boxes]
             - (tf.Tensor) scores of each box:  [N boxes]
 
         Return:
-            - (tf.Tensor) boxes predicted: [F, 4]
+            - (tf.Tensor) boxes predicted: [F, 4] (cx, cy, w, h)
             - (tf.Tensor) class for each box:  [F]
             - (tf.Tensor) scores for each box:  [F]
         """
