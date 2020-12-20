@@ -120,7 +120,8 @@ def pltPredGt(model, db_manager, images_names: str,
 def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                    score_threshold: float = 0.6, start_idx: int = 0,
                    end_idx: int = -1, nms: bool = True, skip: int = 1,
-                   tracker=None, resize: tuple = None, fps: int = 30):
+                   tracker=None, resize: tuple = None, fps: int = 30,
+                   lifespan_thres: int = 5):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
@@ -140,6 +141,7 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         - Tracker: models.NaiveTracker instance if wanted
         - (tuple) resize: target resolution for the gif
         - (int) fps: fps of the output gif
+        - (int) lifespan_thres: min times subject was found before displaying
     """
     cap = cv2.VideoCapture(video_path)
     imgs = []
@@ -185,10 +187,12 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         else:
             boxes, classes, scores = boxes[0], classes[0], scores[0]
         if tracker:
-            identity = tracker(classes, boxes)
+            identity, lifespan = tracker(classes, boxes)
 
         draw = ImageDraw.Draw(img)
         for b, box in enumerate(boxes):
+            if lifespan[b] < lifespan_thres:
+                continue
             if tracker:
                 color = random.seed(identity.numpy()[b] * 10)
             color = random.choice(COLORS)
@@ -207,8 +211,9 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                 draw.text((min_point[0]+1, min_point[1]-22),
                           f"ID: {identity[b]}", font=font, fill=color)
         imgs.append(img)
-    imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
-                 save_all=True, loop=0)
+    imgs[lifespan_thres].save(out_gif, format='GIF',
+                              append_images=imgs[lifespan_thres+1:],
+                              save_all=True, loop=0)
     gif = imageio.mimread(out_gif)
     imageio.mimsave(out_gif, gif, fps=fps)
 
@@ -225,7 +230,7 @@ def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
                         end_idx: int = -1, skip: int = 1, tracker=None,
                         resize: tuple = None, fps: int = 30,
                         input_shape: tuple = (640, 640),
-                        targets: list = None, lifespan_thres: int = 3):
+                        targets: list = None, lifespan_thres: int = 5):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
