@@ -17,8 +17,10 @@ class _subjectTracked():
         self.category = category
         # localization bounding box (cx, cy, w, h)
         self.loc = loc
-        # lifespan increased when subject no seen on an image
+        # lifespan increased when subject is found
         self.lifespan = 0
+        # dying increased when subject is not found
+        self.dying = 0
         # bool to know if subject was seen in the current frame
         self.seen = False
         # subject id
@@ -41,7 +43,7 @@ class NaiveTracker():
     def clearSubjects(self):
         keep = []
         for subject in self.subjects:
-            if subject.seen <= 10:
+            if subject.dying < 10:
                 keep.append(True)
             else:
                 keep.append(False)
@@ -114,7 +116,8 @@ class NaiveTracker():
 
         # remove subject with lifespan > threshold
         self.clearSubjects()
-        identity = np.ones(categories.shape) * -1
+        identity = np.ones(categories.shape,) * -1
+        lifespan = np.zeros(categories.shape,)
 
         # loop over the categories
         for category in tf.unique(categories)[0]:
@@ -134,12 +137,14 @@ class NaiveTracker():
                     # give subject's id to box with max IoU score
                     idx_max_iou = values.numpy().argmax(axis=0)
                     subject.loc = boxes[idx_max_iou]
-                    subject.lifespan = 0
+                    subject.lifespan += 1
+                    subject.dying = 0
                     identity[idx_max_iou] = subject.identity
+                    lifespan[idx_max_iou] = subject.lifespan
         # increase lifespan for any subject that was not seen
         for subject in self.subjects:
             if subject.seen is False:
-                subject.lifespan += 1
+                subject.dying += 1
         # create a new subject for each box that did not get an id
         for i, box in enumerate(boxes):
             if identity[i] == -1:
@@ -147,4 +152,5 @@ class NaiveTracker():
                 new_subject = _subjectTracked(categories[i], box, self.max_id)
                 self.subjects.append(new_subject)
                 identity[i] = self.max_id
-        return tf.dtypes.cast(identity, tf.int16)
+
+        return tf.dtypes.cast(identity, tf.int16), lifespan

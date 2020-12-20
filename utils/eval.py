@@ -217,7 +217,8 @@ def draw_underlined_text(draw, pos, text, font, fill, line_width=2):
 def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
                         score_threshold: float = 0.6, start_idx: int = 0,
                         end_idx: int = -1, skip=1, tracker=None,
-                        resize=None, fps=30, input_shape=(640, 640)):
+                        resize=None, fps=30, input_shape=(640, 640),
+                        targets=None, lifespan_thres=3):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
@@ -253,8 +254,8 @@ def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
         if resize:
             img.thumbnail(resize, Image.ANTIALIAS)
         orig_height, orig_width = img.size[1], img.size[0]
-        line_width = int(0.006 * orig_width)
-        font = ImageFont.truetype("arial.ttf", line_width*10)
+        line_width = int(0.00565 * orig_width)
+        font = ImageFont.truetype("arial.ttf", line_width*9)
 
         img_ssd = tf.image.resize(np.array(img), input_shape)
         img_ssd = tf.convert_to_tensor(img_ssd, dtype=tf.float32)/255.
@@ -281,13 +282,25 @@ def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
         classes_name = result["detection_class_entities"][scores_tokeep]
         scores = result["detection_scores"][scores_tokeep]
 
+        if targets is not None:
+            idx_targets = np.zeros(classes_name.shape)
+            for target in targets:
+                idx_targets += classes_name == target.encode("ascii")
+            idx_targets = idx_targets == 1
+            classes = classes[idx_targets]
+            classes_name = classes_name[idx_targets]
+            scores = scores[idx_targets]
+            boxes = boxes[idx_targets]
+
         if tracker:
-            identity = tracker(classes, boxes)
+            identity, lifespan = tracker(classes, boxes)
 
         draw = ImageDraw.Draw(img)
         for b, box in enumerate(boxes):
+            if lifespan[b] < lifespan_thres:
+                continue
             if tracker:
-                color = random.seed(identity.numpy()[b])
+                color = random.seed(identity.numpy()[b] * 10)
             color = random.choice(COLORS)
             box = tf.concat([box[:2] - box[2:] / 2,
                              box[:2] + box[2:] / 2], axis=-1)
@@ -300,10 +313,11 @@ def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
             draw_underlined_text(draw, (min_point[0]+5, min_point[1]+2), text,
                                  font, fill=color, line_width=line_width)
             if tracker:
-                draw.text((min_point[0]+1, min_point[1]-22),
+                draw.text((min_point[0]+1, min_point[1]-18),
                           f"ID: {identity[b]}", font=font, fill=color)
         imgs.append(img)
-    imgs[0].save(out_gif, format='GIF', append_images=imgs[1:],
-                 save_all=True, loop=0)
+    imgs[lifespan_thres].save(out_gif, format='GIF',
+                              append_images=imgs[lifespan_thres+1:],
+                              save_all=True, loop=0)
     gif = imageio.mimread(out_gif)
     imageio.mimsave(out_gif, gif, fps=fps)
