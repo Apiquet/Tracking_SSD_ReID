@@ -119,21 +119,27 @@ def pltPredGt(model, db_manager, images_names: str,
 
 def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                    score_threshold: float = 0.6, start_idx: int = 0,
-                   end_idx: int = -1, nms=True, skip=1, tracker=None,
-                   resize=None, fps=30):
+                   end_idx: int = -1, nms: bool = True, skip: int = 1,
+                   tracker=None, resize: tuple = None, fps: int = 30):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
-    Infer SSD on each image in sequence, the next function is more optimized
+    Infer SSD from models/SSD300.py on each image in sequence
+    Tracker from models.NaiveTracker can be used to keep IDs on the subjects
 
     Args:
         - SSD300 class from models/SSD300.py
         - VOC2012ManagerObjDetection class from data/
         - (str) video path (MP4)
-        - (str) video path (MP4)
-        - (float) score threshold to draw a box
-        - (int) start frame idx, default is 0
-        - (int) end frame idx, default is -1
+        - (str) out_gif: output path (.gif)
+        - (float) score_threshold: score threshold to draw a box
+        - (int) start_idx: start frame idx, default is 0
+        - (int) end_idx: end frame idx, default is -1
+        - (bool) nms: use non-maximum suppression
+        - (int) skip: idx%skip != 0 is skipped
+        - Tracker: models.NaiveTracker instance if wanted
+        - (tuple) resize: target resolution for the gif
+        - (int) fps: fps of the output gif
     """
     cap = cv2.VideoCapture(video_path)
     imgs = []
@@ -216,21 +222,29 @@ def draw_underlined_text(draw, pos, text, font, fill, line_width=2):
 
 def pltPredOnVideoTfHub(model, video_path: str, out_gif: str,
                         score_threshold: float = 0.6, start_idx: int = 0,
-                        end_idx: int = -1, skip=1, tracker=None,
-                        resize=None, fps=30, input_shape=(640, 640),
-                        targets=None, lifespan_thres=3):
+                        end_idx: int = -1, skip: int = 1, tracker=None,
+                        resize: tuple = None, fps: int = 30,
+                        input_shape: tuple = (640, 640),
+                        targets: list = None, lifespan_thres: int = 3):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
-    Infer SSD on each image in sequence, the next function is more optimized
+    Infer model from TensorFlow Hub on each image in sequence
+    Tracker from models.NaiveTracker can be used to keep IDs on the subjects
 
     Args:
         - SSD640 from tfhub.dev/tensorflow/ssd_mobilenet_v2/fpnlite_640x640/1
         - (str) video path (MP4)
-        - (str) video path (MP4)
+        - (str) out path (.gif file)
         - (float) score threshold to draw a box
         - (int) start frame idx, default is 0
-        - (int) end frame idx, default is -1
+        - (int) skip: idx%skip != 0 is skipped
+        - Tracker: models.NaiveTracker instance if wanted
+        - (tuple) resize: target resolution for the gif
+        - (int) fps: fps of the output gif
+        - (tuple) input_shape: model input shape
+        - (list) targets: list of the target class name like ['Dog','Person']
+        - (int) lifespan_thres: min times subject was found before displaying
     """
     cap = cv2.VideoCapture(video_path)
     imgs = []
