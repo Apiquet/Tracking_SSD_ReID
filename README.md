@@ -4,6 +4,16 @@ SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxi
 
 Full explanation of this code here: https://apiquet.com/2020/11/07/ssd300-implementation/
 
+## First results
+
+### Naïve tracking from models/NaiveTracker and box proposal from models/SSD300
+
+![Tracking on person and dog](imgs/person_dog_track.gif)
+
+### Naïve tracking from models/NaiveTracker and box proposal from TF Hub SSD
+
+![Tracking on person, dog and horses](imgs/horses_ssd_tfhub.gif)
+
 ## Overview
 
 * Deep neural network used for object detection
@@ -58,4 +68,4 @@ Full explanation of this code here: https://apiquet.com/2020/11/07/ssd300-implem
 
 ## Final model explanation
 
-![SSD300](models/model_expand_concat_explained.png)
+![SSD300](imgs/model_expand_concat_explained.png)
