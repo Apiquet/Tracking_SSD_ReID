@@ -1,8 +1,10 @@
-# SSD implementation with TensorFlow 2
+# SSD implementation with TensorFlow 2 and re-Identification
  
 SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxiv.org/pdf/1512.02325.pdf) and [official code](https://github.com/weiliu89/caffe/tree/ssd) (29 Dec 2016)
 
-Full explanation of this code here: https://apiquet.com/2020/11/07/ssd300-implementation/
+Full explanation of SSD implmentation [here](https://apiquet.com/2020/11/07/ssd300-implementation/)
+
+Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and-box-proposal/)
 
 ## First results
 
