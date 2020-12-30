@@ -158,6 +158,30 @@ class VGG16(keras.Model):
             self.conv_4_2_512,
             self.conv_4_3_512])
 
+    def getUntilStage5(self):
+        return keras.models.Sequential([
+            self.conv_1_1_64,
+            self.conv_1_2_64,
+            self.maxpool_1_3_2x2,
+            # Stage 2
+            self.conv_2_1_128,
+            self.conv_2_2_128,
+            self.maxpool_2_3_2x2,
+            # Stage 3
+            self.conv_3_1_256,
+            self.conv_3_2_256,
+            self.conv_3_3_256,
+            self.maxpool_3_4_2x2,
+            # Stage 4
+            self.conv_4_1_512,
+            self.conv_4_2_512,
+            self.conv_4_3_512,
+            # Stage 5
+            self.maxpool_4_4_2x2,
+            self.conv_5_1_512,
+            self.conv_5_2_512,
+            self.conv_5_3_512])
+
     def getStage5(self):
         return keras.models.Sequential([
             self.maxpool_4_4_2x2,
