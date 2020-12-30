@@ -10,7 +10,6 @@ import tensorflow as tf
 from tensorflow.keras.applications import VGG16 as VGG16_original
 from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Input
 
-# load VGG16 from anywhere
 try:
     from .VGG16 import VGG16
 except Exception:
