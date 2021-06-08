@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 
 class VOC2012ManagerObjDetection():
 
-    def __init__(self, path, trainRatio=0.7, batch_size=32, floatType=32):
+    def __init__(self, path="", trainRatio=0.7, batch_size=32, floatType=32):
         super(VOC2012ManagerObjDetection, self).__init__()
         if floatType == 32:
             self.floatType = tf.float32
@@ -32,9 +32,12 @@ class VOC2012ManagerObjDetection():
                         'sheep': 17, 'sofa': 18, 'train': 19, 'tvmonitor': 20}
         self.images_path = path + "/JPEGImages/"
         self.annotations_path = path + "/Annotations/"
-        self.images_name = [im.replace(".jpg", "")
-                            for im in os.listdir(self.images_path)
-                            if os.path.isfile(os.path.join(self.images_path,
+        self.images_name = []
+        if path != "":
+            self.images_name = [
+                im.replace(".jpg", "")
+                for im in os.listdir(self.images_path)
+                if os.path.isfile(os.path.join(self.images_path,
                                                            im))]
         self.number_samples = len(self.images_name)
         self.train_samples = int(self.number_samples * trainRatio)
