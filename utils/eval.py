@@ -19,7 +19,7 @@ from tqdm import tqdm
 nb_colors = 100
 COLORS = [(random.randint(50, 200),
            random.randint(50, 200),
-           random.randint(50, 200)) for i in range(nb_colors)]
+           random.randint(100, 200)) for i in range(nb_colors)]
 
 
 def pltPredOnImg(img, boxes, classes, scores, db_manager):
@@ -121,7 +121,7 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                    score_threshold: float = 0.6, start_idx: int = 0,
                    end_idx: int = -1, nms: bool = True, skip: int = 1,
                    tracker=None, resize: tuple = None, fps: int = 30,
-                   lifespan_thres: int = 5):
+                   lifespan_thres: int = 5, txt_width_factor: float = 0.0045):
     """
     Method to infer a model on a MP4 video
     Create a gif with drawn boxes, classes and confidence
@@ -169,7 +169,7 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         if resize:
             img.thumbnail(resize, Image.ANTIALIAS)
         orig_height, orig_width = img.size[1], img.size[0]
-        line_width = int(0.003 * orig_width)
+        line_width = int(txt_width_factor * orig_width)
         font = ImageFont.truetype("arial.ttf", line_width*10)
 
         confs, locs = model(img_ssd)
