@@ -202,6 +202,12 @@ class SSD300(tf.keras.Model):
             self.stage_11_1_128,
             self.stage_11_2_256])
 
+    def getVGG16(self):
+        """ Method to get the feature extractor """
+        return tf.keras.models.Sequential([
+            self.VGG16_stage_4,
+            self.VGG16_stage_5])
+
     def getModel(self, output="concat"):
         """ Method to get the full SSD architecture
 

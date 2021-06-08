@@ -147,6 +147,7 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
     imgs = []
     i = 0
     number_of_frame = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
     if end_idx != -1:
         number_of_frame = end_idx
     for _ in tqdm(range(number_of_frame)):
@@ -168,7 +169,7 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
         if resize:
             img.thumbnail(resize, Image.ANTIALIAS)
         orig_height, orig_width = img.size[1], img.size[0]
-        line_width = int(0.006 * orig_width)
+        line_width = int(0.003 * orig_width)
         font = ImageFont.truetype("arial.ttf", line_width*10)
 
         confs, locs = model(img_ssd)
@@ -186,14 +187,16 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                                                          scores[0])
         else:
             boxes, classes, scores = boxes[0], classes[0], scores[0]
-        if tracker:
+        if tracker is not None:
             identity, lifespan = tracker(classes, boxes)
+        else:
+            lifespan_thres = 0
 
         draw = ImageDraw.Draw(img)
         for b, box in enumerate(boxes):
-            if lifespan[b] < lifespan_thres:
+            if tracker is not None and lifespan[b] < lifespan_thres:
                 continue
-            if tracker:
+            if tracker is not None:
                 color = random.seed(identity.numpy()[b] * 10)
             color = random.choice(COLORS)
             box = tf.concat([box[:2] - box[2:] / 2,
@@ -207,15 +210,13 @@ def pltPredOnVideo(model, db_manager, video_path: str, out_gif: str,
                 list(db_manager.classes.keys())[classes[b]], scores[b])
             draw_underlined_text(draw, (min_point[0]+5, min_point[1]+2), text,
                                  font, fill=color, line_width=line_width)
-            if tracker:
+            if tracker is not None:
                 draw.text((min_point[0]+1, min_point[1]-22),
                           f"ID: {identity[b]}", font=font, fill=color)
         imgs.append(img)
     imgs[lifespan_thres].save(out_gif, format='GIF',
                               append_images=imgs[lifespan_thres+1:],
-                              save_all=True, loop=0)
-    gif = imageio.mimread(out_gif)
-    imageio.mimsave(out_gif, gif, fps=fps)
+                              save_all=True, loop=0, duration=1/fps)
 
 
 def draw_underlined_text(draw, pos, text, font, fill, line_width=2):
