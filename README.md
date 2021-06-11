@@ -71,3 +71,8 @@ Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and
 ## Final model explanation
 
 ![SSD300](imgs/model_expand_concat_explained.png)
+
+## Usage
+
+To test the tracker, please use the notebook tracker_test.ipynb
+
