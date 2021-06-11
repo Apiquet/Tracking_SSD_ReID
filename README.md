@@ -10,11 +10,11 @@ Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and
 
 ### Naïve tracking from models/NaiveTracker and box proposal from models/SSD300
 
-![Tracking on person and dog](imgs/person_dog_track.gif)
+![Tracking on person and dog](imgs/person_dog_tracking.gif)
 
 ### Naïve tracking from models/NaiveTracker and box proposal from TF Hub SSD
 
-![Tracking on person, dog and horses](imgs/horses_ssd_tfhub.gif)
+![Tracking on person, dog and horses](imgs/horses_ssd_tfhub_tracking.gif)
 
 ## Overview
 
