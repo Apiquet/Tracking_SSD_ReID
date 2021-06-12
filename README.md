@@ -21,7 +21,7 @@ Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and
 * Deep neural network used for object detection
 * Default set of bounding boxes of different aspect ratios and scales (per feature map)
 * At prediction time: scores for the presence of each object class in each default box
-* also produces ajustements to the box the better match object shape (offset from the default box to the ground truth)
+* also produces ajustements to the box to better match object shape (offset from the default box to the ground truth)
 * Two possible input resolution implemente: 300x300, 512x512
 * High speed network mainly due to the elimination of bounding box proposals and resampling stage
 * Small convolutional filters are used to predict object categories and offsets in bounding box locations
