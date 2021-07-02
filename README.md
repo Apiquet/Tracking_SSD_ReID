@@ -74,5 +74,6 @@ Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and
 
 ## Usage
 
+To train the SSD300 model, please use the notebook training.ipynb
 To test the tracker, please use the notebook tracker_test.ipynb
 
