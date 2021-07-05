@@ -75,4 +75,5 @@ Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and
 ## Usage
 
 The notebook training.ipynb can be used to train the SSD300 model.
+The notebook SSD300_test.ipynb can be used to test the object detection model SSD300.
 The notebook tracker_test.ipynb can be used to test the tracker.
