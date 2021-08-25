@@ -1,4 +1,4 @@
-# SSD implementation with TensorFlow 2 and re-Identification
+# SSD300 implementation with TensorFlow 2 and re-Identification
  
 SSD implementation from paper: [SSD: Single Shot MultiBox Detector](https://arxiv.org/pdf/1512.02325.pdf) and [official code](https://github.com/weiliu89/caffe/tree/ssd) (29 Dec 2016)
 
