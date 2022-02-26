@@ -10,7 +10,7 @@ import tensorflow as tf
 from tqdm import tqdm
 
 
-def train(model, optimizer, db_manager, imgs, confs, locs, weights_path,
+def train(model, optimizer, imgs, confs, locs, weights_path,
           num_epoch=250, inter_save=5):
     """
     Method to train SSD architecture
@@ -29,7 +29,6 @@ def train(model, optimizer, db_manager, imgs, confs, locs, weights_path,
         for i in tqdm(range(len(imgs))):
             # get data from batch
             images, confs_gt, locs_gt = imgs[i], confs[i], locs[i]
-
             # get predictions and losses
             with tf.GradientTape() as tape:
                 confs_pred, locs_pred = model(images)
@@ -41,7 +40,7 @@ def train(model, optimizer, db_manager, imgs, confs, locs, weights_path,
                 confs_loss, locs_loss = model.calculateLoss(
                     confs_pred, confs_gt, locs_pred, locs_gt)
                 loss = confs_loss + 1*locs_loss  # alpha equals 1
-                l2 = [tf.nn.l2_loss(t)
+                l2 = [tf.nn.l2_loss(t).numpy()
                       for t in model.trainable_variables]
                 loss = loss + 0.001 * tf.math.reduce_sum(l2)
                 losses.append(loss)

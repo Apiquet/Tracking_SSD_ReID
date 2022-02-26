@@ -11,6 +11,7 @@ from models.SSD300 import SSD300
 
 import numpy as np
 from tqdm import tqdm
+import os
 
 from glob import glob
 import tensorflow as tf
@@ -25,6 +26,8 @@ def saveGTdata(voc2012path, output_path):
     Args:
         - (str) path to save data
     """
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
     db_manager = VOC2012ManagerObjDetection(voc2012path + '/',
                                             batch_size=32, floatType=32)
     SSD300_model = SSD300(21, floatType=32)
@@ -40,7 +43,7 @@ def saveGTdata(voc2012path, output_path):
                 locs, allow_pickle=True)
 
 
-def loadGTdata(path):
+def loadGTdata(path, nb_data_to_load=-1):
     """
     Method to load needed data for training
     N: batch size
@@ -57,17 +60,17 @@ def loadGTdata(path):
         - (list of tf.Tensor) locs gt (N, B, O, D, 4)
     """
     imgs = []
-    for batch in tqdm(sorted(glob(path + "/imgs*.npy"))):
+    for batch in tqdm(sorted(glob(path + "/imgs*.npy"))[:nb_data_to_load]):
         # get data from batch
         imgs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
 
     confs = []
-    for batch in tqdm(sorted(glob(path + "/confs*.npy"))):
+    for batch in tqdm(sorted(glob(path + "/confs*.npy"))[:nb_data_to_load]):
         # get data from batch
         confs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
 
     locs = []
-    for batch in tqdm(sorted(glob(path + "/locs*.npy"))):
+    for batch in tqdm(sorted(glob(path + "/locs*.npy"))[:nb_data_to_load]):
         # get data from batch
         locs.append(tf.convert_to_tensor(np.load(batch, allow_pickle=True)))
 
