@@ -9,8 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 
-class _subjectTracked():
-
+class _subjectTracked:
     def __init__(self, category: tf.int64, loc: tf.Tensor, identity: int):
         super(_subjectTracked, self).__init__()
         # object class
@@ -27,8 +26,7 @@ class _subjectTracked():
         self.identity = identity
 
 
-class NaiveTracker():
-
+class NaiveTracker:
     def __init__(self):
         super(NaiveTracker, self).__init__()
 
@@ -49,8 +47,7 @@ class NaiveTracker():
                 keep.append(False)
         self.subjects = [i for (i, v) in zip(self.subjects, keep) if v]
 
-    def computeJaccardIdx(self, ref_box: tf.Tensor, boxes: tf.Tensor,
-                          iou_threshold: float):
+    def computeJaccardIdx(self, ref_box: tf.Tensor, boxes: tf.Tensor, iou_threshold: float):
         """
         Method to get the boolean tensor where iou is superior to
         the specified threshold between the gt box and the default one
@@ -65,39 +62,28 @@ class NaiveTracker():
             - (tf.Tensor) 0 if iou > threshold, 1 otherwise [D]
         """
         # convert to xmin, ymin, xmax, ymax
-        boxes = tf.concat([
-            boxes[:, :2] - boxes[:, 2:] / 2,
-            boxes[:, :2] + boxes[:, 2:] / 2], axis=-1)
-        ref_box = tf.concat([ref_box[:2] - ref_box[2:] / 2,
-                             ref_box[:2] + ref_box[2:] / 2], axis=-1)
+        boxes = tf.concat(
+            [boxes[:, :2] - boxes[:, 2:] / 2, boxes[:, :2] + boxes[:, 2:] / 2], axis=-1
+        )
+        ref_box = tf.concat([ref_box[:2] - ref_box[2:] / 2, ref_box[:2] + ref_box[2:] / 2], axis=-1)
         ref_box = tf.expand_dims(ref_box, 0)
         ref_box = tf.repeat(ref_box, repeats=[boxes.shape[0]], axis=0)
 
         # compute intersection
-        inter_xymin = tf.math.maximum(boxes[:, :2],
-                                      ref_box[:, :2])
-        inter_xymax = tf.math.minimum(boxes[:, 2:],
-                                      ref_box[:, 2:])
-        inter_width_height = tf.clip_by_value(inter_xymax - inter_xymin,
-                                              0.0, 300.0)
+        inter_xymin = tf.math.maximum(boxes[:, :2], ref_box[:, :2])
+        inter_xymax = tf.math.minimum(boxes[:, 2:], ref_box[:, 2:])
+        inter_width_height = tf.clip_by_value(inter_xymax - inter_xymin, 0.0, 300.0)
         inter_area = inter_width_height[:, 0] * inter_width_height[:, 1]
 
         # compute area of the boxes
-        ref_box_width_height =\
-            tf.clip_by_value(ref_box[:, 2:] - ref_box[:, :2],
-                             0.0, 300.0)
-        ref_box_width_height_area = ref_box_width_height[:, 0] *\
-            ref_box_width_height[:, 1]
+        ref_box_width_height = tf.clip_by_value(ref_box[:, 2:] - ref_box[:, :2], 0.0, 300.0)
+        ref_box_width_height_area = ref_box_width_height[:, 0] * ref_box_width_height[:, 1]
 
-        boxes_width_height =\
-            tf.clip_by_value(boxes[:, 2:] - boxes[:, :2],
-                             0.0, 300.0)
-        boxes_width_height_area = boxes_width_height[:, 0] *\
-            boxes_width_height[:, 1]
+        boxes_width_height = tf.clip_by_value(boxes[:, 2:] - boxes[:, :2], 0.0, 300.0)
+        boxes_width_height_area = boxes_width_height[:, 0] * boxes_width_height[:, 1]
 
         # compute iou
-        iou = inter_area / (ref_box_width_height_area +
-                            boxes_width_height_area - inter_area)
+        iou = inter_area / (ref_box_width_height_area + boxes_width_height_area - inter_area)
         return iou >= iou_threshold, iou
 
     def __call__(self, categories, boxes):
@@ -116,8 +102,15 @@ class NaiveTracker():
 
         # remove subject with lifespan > threshold
         self.clearSubjects()
-        identity = np.ones(categories.shape,) * -1
-        lifespan = np.zeros(categories.shape,)
+        identity = (
+            np.ones(
+                categories.shape,
+            )
+            * -1
+        )
+        lifespan = np.zeros(
+            categories.shape,
+        )
 
         # loop over the categories
         for category in tf.unique(categories)[0]:

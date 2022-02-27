@@ -5,14 +5,14 @@
 Pascal VOC2012 dataset manager
 """
 
-import numpy as np
 import os
-import tensorflow as tf
 import xml.etree.ElementTree as ET
 
+import numpy as np
+import tensorflow as tf
 
-class VOC2012ManagerObjDetection():
 
+class VOC2012ManagerObjDetection:
     def __init__(self, path="", trainRatio=0.7, batch_size=32, floatType=32):
         super(VOC2012ManagerObjDetection, self).__init__()
         if floatType == 32:
@@ -24,12 +24,29 @@ class VOC2012ManagerObjDetection():
 
         self.path = path
         self.img_resolution = (300, 300)
-        self.classes = {'undefined': 0,
-                        'aeroplane': 1, 'bicycle': 2, 'bird': 3, 'boat': 4,
-                        'bottle': 5, 'bus': 6, 'car': 7, 'cat': 8, 'chair': 9,
-                        'cow': 10, 'diningtable': 11, 'dog': 12, 'horse': 13,
-                        'motorbike': 14, 'person': 15, 'pottedplant': 16,
-                        'sheep': 17, 'sofa': 18, 'train': 19, 'tvmonitor': 20}
+        self.classes = {
+            'undefined': 0,
+            'aeroplane': 1,
+            'bicycle': 2,
+            'bird': 3,
+            'boat': 4,
+            'bottle': 5,
+            'bus': 6,
+            'car': 7,
+            'cat': 8,
+            'chair': 9,
+            'cow': 10,
+            'diningtable': 11,
+            'dog': 12,
+            'horse': 13,
+            'motorbike': 14,
+            'person': 15,
+            'pottedplant': 16,
+            'sheep': 17,
+            'sofa': 18,
+            'train': 19,
+            'tvmonitor': 20,
+        }
         self.images_path = path + "/JPEGImages/"
         self.annotations_path = path + "/Annotations/"
         self.images_name = []
@@ -37,15 +54,15 @@ class VOC2012ManagerObjDetection():
             self.images_name = [
                 im.replace(".jpg", "")
                 for im in os.listdir(self.images_path)
-                if os.path.isfile(os.path.join(self.images_path,
-                                                           im))]
+                if os.path.isfile(os.path.join(self.images_path, im))
+            ]
         self.number_samples = len(self.images_name)
         self.train_samples = int(self.number_samples * trainRatio)
-        self.train_set = self.images_name[:self.train_samples -
-                                          self.train_samples % batch_size]
-        self.val_set = self.images_name[self.train_samples:]
-        self.batches = [self.train_set[i:i + batch_size]
-                        for i in range(0, len(self.train_set), batch_size)]
+        self.train_set = self.images_name[: self.train_samples - self.train_samples % batch_size]
+        self.val_set = self.images_name[self.train_samples :]
+        self.batches = [
+            self.train_set[i : i + batch_size] for i in range(0, len(self.train_set), batch_size)
+        ]
 
     def getRawData(self, images_name: list):
         """
@@ -66,20 +83,17 @@ class VOC2012ManagerObjDetection():
         boxes = []
         classes = []
         for img in images_name:
-            image = tf.keras.preprocessing.image.load_img(
-                self.images_path + img + ".jpg")
+            image = tf.keras.preprocessing.image.load_img(self.images_path + img + ".jpg")
             w, h = image.size[0], image.size[1]
             image = tf.image.resize(np.array(image), self.img_resolution)
-            images_array = \
-                tf.keras.preprocessing.image.img_to_array(image) / 255.
+            images_array = tf.keras.preprocessing.image.img_to_array(image) / 255.0
             images.append(images_array)
 
             # annotation
             boxes_img_i, classes_img_i = self.getAnnotations(img, (w, h))
             boxes.append(boxes_img_i)
             classes.append(classes_img_i)
-        return tf.convert_to_tensor(images, dtype=self.floatType),\
-            boxes, classes
+        return tf.convert_to_tensor(images, dtype=self.floatType), boxes, classes
 
     def getAnnotations(self, image_name: str, resolution: tuple):
         """
@@ -95,8 +109,7 @@ class VOC2012ManagerObjDetection():
         """
         boxes = []
         classes = []
-        objects = ET.parse(
-            self.annotations_path + image_name + ".xml").findall('object')
+        objects = ET.parse(self.annotations_path + image_name + ".xml").findall('object')
         for obj in objects:
             bndbox = obj.find('bndbox')
             xmin = float(bndbox.find('xmin').text) / resolution[0]
@@ -105,21 +118,25 @@ class VOC2012ManagerObjDetection():
             ymax = float(bndbox.find('ymax').text) / resolution[1]
 
             # calculate cx, cy, width, height
-            width = xmax-xmin
-            height = ymax-ymin
-            if xmin + width > 1. or ymin + height > 1. or\
-               xmin < 0. or ymin < 0.:
-                print("Boxe outside picture: (xmin, ymin, xmax, ymax):\
-                      ({} {}, {}, {})".format(xmin, ymin, xmax, ymax))
+            width = xmax - xmin
+            height = ymax - ymin
+            if xmin + width > 1.0 or ymin + height > 1.0 or xmin < 0.0 or ymin < 0.0:
+                print(
+                    "Boxe outside picture: (xmin, ymin, xmax, ymax):\
+                      ({} {}, {}, {})".format(
+                        xmin, ymin, xmax, ymax
+                    )
+                )
 
-            boxes.append([xmin+width/2., ymin+height/2., width, height])
+            boxes.append([xmin + width / 2.0, ymin + height / 2.0, width, height])
 
             # get class
             name = obj.find('name').text.lower().strip()
             classes.append(self.classes[name])
 
-        return tf.convert_to_tensor(boxes, dtype=self.floatType),\
-            tf.convert_to_tensor(classes, dtype=tf.int16)
+        return tf.convert_to_tensor(boxes, dtype=self.floatType), tf.convert_to_tensor(
+            classes, dtype=tf.int16
+        )
 
     def getImagesAndGt(self, images_name: list, default_boxes: list):
         """
@@ -158,9 +175,11 @@ class VOC2012ManagerObjDetection():
             gt_confs.append(gt_confs_per_default_box)
             gt_locs.append(gt_locs_per_default_box)
 
-        return images,\
-            tf.convert_to_tensor(gt_confs, dtype=tf.int16),\
-            tf.convert_to_tensor(gt_locs, dtype=self.floatType)
+        return (
+            images,
+            tf.convert_to_tensor(gt_confs, dtype=tf.int16),
+            tf.convert_to_tensor(gt_locs, dtype=self.floatType),
+        )
 
     def computeRectangleArea(self, xmin, ymin, xmax, ymax):
         return (xmax - xmin) * (ymax - ymin)
@@ -176,36 +195,34 @@ class VOC2012ManagerObjDetection():
         Return:
             - (float) IoU value
         """
-        xmin_box_1 = box_1[0] - box_1[2]/2.
-        ymin_box_1 = box_1[1] - box_1[3]/2.
-        xmax_box_1 = box_1[0] + box_1[2]/2.
-        ymax_box_1 = box_1[1] + box_1[3]/2.
+        xmin_box_1 = box_1[0] - box_1[2] / 2.0
+        ymin_box_1 = box_1[1] - box_1[3] / 2.0
+        xmax_box_1 = box_1[0] + box_1[2] / 2.0
+        ymax_box_1 = box_1[1] + box_1[3] / 2.0
 
-        xmin_box_2 = box_2[0] - box_2[2]/2.
-        ymin_box_2 = box_2[1] - box_2[3]/2.
-        xmax_box_2 = box_2[0] + box_2[2]/2.
-        ymax_box_2 = box_2[1] + box_2[3]/2.
+        xmin_box_2 = box_2[0] - box_2[2] / 2.0
+        ymin_box_2 = box_2[1] - box_2[3] / 2.0
+        xmax_box_2 = box_2[0] + box_2[2] / 2.0
+        ymax_box_2 = box_2[1] + box_2[3] / 2.0
 
         xmin_intersection = max(xmin_box_1, xmin_box_2)
         ymin_intersection = max(ymin_box_1, ymin_box_2)
         xmax_intersection = min(xmax_box_1, xmax_box_2)
         ymax_intersection = min(ymax_box_1, ymax_box_2)
 
-        if xmin_intersection > xmax_intersection or\
-           ymin_intersection > ymax_intersection:
+        if xmin_intersection > xmax_intersection or ymin_intersection > ymax_intersection:
             return 0.0
-        intersection = self.computeRectangleArea(xmin_intersection,
-                                                 ymin_intersection,
-                                                 xmax_intersection,
-                                                 ymax_intersection)
+        intersection = self.computeRectangleArea(
+            xmin_intersection, ymin_intersection, xmax_intersection, ymax_intersection
+        )
 
-        union = self.computeRectangleArea(xmin_box_1, ymin_box_1,
-                                          xmax_box_1, ymax_box_1) +\
-            self.computeRectangleArea(xmin_box_2, ymin_box_2,
-                                      xmax_box_2, ymax_box_2) -\
-            intersection
+        union = (
+            self.computeRectangleArea(xmin_box_1, ymin_box_1, xmax_box_1, ymax_box_1)
+            + self.computeRectangleArea(xmin_box_2, ymin_box_2, xmax_box_2, ymax_box_2)
+            - intersection
+        )
 
-        return intersection/union
+        return intersection / union
 
     def getLocOffsets(self, box_gt: tf.Tensor, box_pred: tf.Tensor):
         """
@@ -219,14 +236,18 @@ class VOC2012ManagerObjDetection():
             - (tf.Tensor) offset for the 4 parameters: cx, cy, w, h [4]
         """
 
-        return tf.Variable([box_gt[0] - box_pred[0],
-                            box_gt[1] - box_pred[1],
-                            box_gt[2] - box_pred[2],
-                            box_gt[3] - box_pred[3]])
+        return tf.Variable(
+            [
+                box_gt[0] - box_pred[0],
+                box_gt[1] - box_pred[1],
+                box_gt[2] - box_pred[2],
+                box_gt[3] - box_pred[3],
+            ]
+        )
 
-    def computeJaccardIdxSpeedUp(self, gt_box: tf.Tensor,
-                                 default_boxes: tf.Tensor,
-                                 iou_threshold: float):
+    def computeJaccardIdxSpeedUp(
+        self, gt_box: tf.Tensor, default_boxes: tf.Tensor, iou_threshold: float
+    ):
         """
         Method to get the boolean tensor where iou is superior to
         the specified threshold between the gt box and the default one
@@ -241,43 +262,39 @@ class VOC2012ManagerObjDetection():
             - (tf.Tensor) 0 if iou > threshold, 1 otherwise [D]
         """
         # convert to xmin, ymin, xmax, ymax
-        default_boxes = tf.concat([
-            default_boxes[:, :2] - default_boxes[:, 2:] / 2,
-            default_boxes[:, :2] + default_boxes[:, 2:] / 2], axis=-1)
-        gt_box = tf.concat([gt_box[:2] - gt_box[2:] / 2,
-                            gt_box[:2] + gt_box[2:] / 2], axis=-1)
+        default_boxes = tf.concat(
+            [
+                default_boxes[:, :2] - default_boxes[:, 2:] / 2,
+                default_boxes[:, :2] + default_boxes[:, 2:] / 2,
+            ],
+            axis=-1,
+        )
+        gt_box = tf.concat([gt_box[:2] - gt_box[2:] / 2, gt_box[:2] + gt_box[2:] / 2], axis=-1)
         gt_box = tf.expand_dims(gt_box, 0)
         gt_box = tf.repeat(gt_box, repeats=[default_boxes.shape[0]], axis=0)
 
         # compute intersection
-        inter_xymin = tf.math.maximum(default_boxes[:, :2],
-                                      gt_box[:, :2])
-        inter_xymax = tf.math.minimum(default_boxes[:, 2:],
-                                      gt_box[:, 2:])
-        inter_width_height = tf.clip_by_value(inter_xymax - inter_xymin,
-                                              0.0, 300.0)
+        inter_xymin = tf.math.maximum(default_boxes[:, :2], gt_box[:, :2])
+        inter_xymax = tf.math.minimum(default_boxes[:, 2:], gt_box[:, 2:])
+        inter_width_height = tf.clip_by_value(inter_xymax - inter_xymin, 0.0, 300.0)
         inter_area = inter_width_height[:, 0] * inter_width_height[:, 1]
 
         # compute area of the boxes
-        gt_box_width_height =\
-            tf.clip_by_value(gt_box[:, 2:] - gt_box[:, :2],
-                             0.0, 300.0)
-        gt_box_width_height_area = gt_box_width_height[:, 0] *\
-            gt_box_width_height[:, 1]
+        gt_box_width_height = tf.clip_by_value(gt_box[:, 2:] - gt_box[:, :2], 0.0, 300.0)
+        gt_box_width_height_area = gt_box_width_height[:, 0] * gt_box_width_height[:, 1]
 
-        default_boxes_width_height =\
-            tf.clip_by_value(default_boxes[:, 2:] - default_boxes[:, :2],
-                             0.0, 300.0)
-        default_boxes_width_height_area = default_boxes_width_height[:, 0] *\
-            default_boxes_width_height[:, 1]
+        default_boxes_width_height = tf.clip_by_value(
+            default_boxes[:, 2:] - default_boxes[:, :2], 0.0, 300.0
+        )
+        default_boxes_width_height_area = (
+            default_boxes_width_height[:, 0] * default_boxes_width_height[:, 1]
+        )
 
         # compute iou
-        iou = inter_area / (gt_box_width_height_area +
-                            default_boxes_width_height_area - inter_area)
+        iou = inter_area / (gt_box_width_height_area + default_boxes_width_height_area - inter_area)
         return tf.dtypes.cast(iou >= iou_threshold, tf.int16)
 
-    def getLocOffsetsSpeedUp(self, gt_box: tf.Tensor, iou_bin: tf.Tensor,
-                             default_boxes: tf.Tensor):
+    def getLocOffsetsSpeedUp(self, gt_box: tf.Tensor, iou_bin: tf.Tensor, default_boxes: tf.Tensor):
         """
         Method to get the offset from default boxes to box_gt on cx, cy, w, h
         where iou_idx is 1
@@ -323,23 +340,22 @@ class VOC2012ManagerObjDetection():
         gt_locs = []
         for i, gt_boxes_img in enumerate(boxes):
             gt_confs_per_image = tf.zeros([len(default_boxes)], tf.int16)
-            gt_locs_per_image = tf.zeros([len(default_boxes), 4],
-                                         self.floatType)
+            gt_locs_per_image = tf.zeros([len(default_boxes), 4], self.floatType)
             iou_bin_masks = []
             for g, gt_box in enumerate(gt_boxes_img):
-                iou_bin = self.computeJaccardIdxSpeedUp(gt_box,
-                                                        default_boxes,
-                                                        0.5)
+                iou_bin = self.computeJaccardIdxSpeedUp(gt_box, default_boxes, 0.5)
                 for mask in iou_bin_masks:
                     iou_bin = tf.clip_by_value(iou_bin - mask, 0, 1)
                 iou_bin_masks.append(iou_bin)
-                gt_confs_per_image = gt_confs_per_image +\
-                    iou_bin * classes[i][g]
-                gt_locs_per_image = gt_locs_per_image +\
-                    self.getLocOffsetsSpeedUp(gt_box, iou_bin, default_boxes)
+                gt_confs_per_image = gt_confs_per_image + iou_bin * classes[i][g]
+                gt_locs_per_image = gt_locs_per_image + self.getLocOffsetsSpeedUp(
+                    gt_box, iou_bin, default_boxes
+                )
             gt_confs.append(gt_confs_per_image)
             gt_locs.append(gt_locs_per_image)
 
-        return images,\
-            tf.convert_to_tensor(gt_confs, dtype=tf.int16),\
-            tf.convert_to_tensor(gt_locs, dtype=self.floatType)
+        return (
+            images,
+            tf.convert_to_tensor(gt_confs, dtype=tf.int16),
+            tf.convert_to_tensor(gt_locs, dtype=self.floatType),
+        )

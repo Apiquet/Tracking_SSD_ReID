@@ -5,18 +5,16 @@
 Siamese network for tracking
 """
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications import VGG16 as VGG16_original
-from tensorflow.keras.layers import Conv2D, MaxPool2D, Dense, Flatten, Input
 
 try:
     from .VGG16 import VGG16
 except Exception:
     from VGG16 import VGG16
 
-class SiamTracker(tf.keras.Model):
 
+class SiamTracker(tf.keras.Model):
     def __init__(self, input_shape=(300, 300, 3)):
         super(SiamTracker, self).__init__()
         self.VGG16 = VGG16(input_shape=input_shape)
@@ -29,12 +27,13 @@ class SiamTracker(tf.keras.Model):
 
         for i in range(len(self.VGG16_stage_4.layers)):
             self.VGG16_stage_4.get_layer(index=i).set_weights(
-                vgg16_original.get_layer(index=i+1).get_weights())
+                vgg16_original.get_layer(index=i + 1).get_weights()
+            )
 
         for j in range(len(self.VGG16_stage_5.layers)):
             self.VGG16_stage_5.get_layer(index=j).set_weights(
-                vgg16_original.get_layer(index=i+j+2).get_weights())
-
+                vgg16_original.get_layer(index=i + j + 2).get_weights()
+            )
 
     def call(self, intput_1, input_2):
         """
