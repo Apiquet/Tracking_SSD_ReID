@@ -6,7 +6,13 @@ Full explanation of SSD implmentation [here](https://apiquet.com/2020/11/07/ssd3
 
 Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and-box-proposal/)
 
-## First results
+## Usage
+
+* The notebook training.ipynb can be used to train the SSD300 model.
+* The notebook SSD300_test.ipynb can be used to test the object detection model SSD300.
+* The notebook tracker_test.ipynb can be used to test the tracker (SSD300 model + tracking module for multi-Object Tracking)
+
+## Illustrations
 
 ### Naïve tracking from models/NaiveTracker and box proposal from models/SSD300
 
@@ -71,9 +77,3 @@ Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and
 ## Final model explanation
 
 ![SSD300](imgs/model_expand_concat_explained.png)
-
-## Usage
-
-* The notebook training.ipynb can be used to train the SSD300 model.
-* The notebook SSD300_test.ipynb can be used to test the object detection model SSD300.
-* The notebook tracker_test.ipynb can be used to test the tracker (SSD300 model + tracking module for multi-Object Tracking)
