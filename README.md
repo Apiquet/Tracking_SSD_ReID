@@ -6,6 +6,8 @@ Full explanation of SSD implmentation [here](https://apiquet.com/2020/11/07/ssd3
 
 Explanation of re-Id strategy [here](https://apiquet.com/2020/12/06/tracking-and-box-proposal/)
 
+Overview of the recent object detection models is available [here](https://apiquet.com/2022/03/01/sota_object_detection/)
+
 ## Usage
 
 * The notebook training.ipynb can be used to train the SSD300 model.
